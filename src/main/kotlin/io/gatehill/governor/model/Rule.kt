@@ -1,5 +1,10 @@
 package io.gatehill.governor.model
 
+import io.gatehill.governor.model.eval.EvaluationContext
+import io.gatehill.governor.model.eval.EvaluationResult
+
 interface Rule {
-    fun test(context: ExecutionContext)
+    val info: RuleInfo
+
+    fun test(context: EvaluationContext): EvaluationResult
 }

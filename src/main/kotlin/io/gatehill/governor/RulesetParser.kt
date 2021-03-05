@@ -4,29 +4,19 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.gatehill.governor.model.Rule
-import io.gatehill.governor.model.RuleInfo
 import io.gatehill.governor.model.Ruleset
 import io.gatehill.governor.model.config.RulesetDef
 import io.gatehill.governor.model.rules.MandatoryPropertiesAddedRule
 import java.nio.file.Paths
-import kotlin.reflect.full.findAnnotation
 
 class RulesetParser {
     private val registeredRules = listOf<Rule>(
         MandatoryPropertiesAddedRule()
     )
 
-    private val rules: Map<String, Rule>
+    private val rules = registeredRules.map { rule -> return@map rule.info.name to rule }.toMap()
 
     private val yamlMapper = YAMLMapper().registerKotlinModule()
-
-    init {
-        rules = registeredRules.map { rule ->
-            val ruleInfo = rule::class.findAnnotation<RuleInfo>()
-            ruleInfo ?: throw IllegalStateException("Missing rule info for: ${rule::class.qualifiedName}")
-            return@map ruleInfo.name to rule
-        }.toMap()
-    }
 
     fun loadFromFile(rulesFilePath: String): Ruleset {
         val rulesFile = Paths.get(rulesFilePath).toFile()

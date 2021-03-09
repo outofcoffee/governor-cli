@@ -9,7 +9,7 @@ class RuleEnforcer {
     private val logger = LogManager.getLogger(RuleEnforcer::class.java)
 
     fun enforce(currentSpec: OpenAPI, previousSpec: OpenAPI? = null, ruleset: Ruleset) {
-        val context = EvaluationContext(currentSpec, previousSpec, ruleset)
+        val context = EvaluationContext(currentSpec, previousSpec)
 
         val results = ruleset.rules.map { rule -> rule to rule.test(context) }.toMap()
 

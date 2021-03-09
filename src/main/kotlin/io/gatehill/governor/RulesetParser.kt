@@ -6,12 +6,12 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.gatehill.governor.model.Rule
 import io.gatehill.governor.model.Ruleset
 import io.gatehill.governor.model.config.RulesetDef
-import io.gatehill.governor.model.rules.MandatoryPropertiesAddedRule
+import io.gatehill.governor.model.rules.RequiredParametersAddedRule
 import java.nio.file.Paths
 
 class RulesetParser {
     private val registeredRules = listOf<Rule>(
-        MandatoryPropertiesAddedRule()
+        RequiredParametersAddedRule()
     )
 
     private val rules = registeredRules.map { rule -> return@map rule.info.name to rule }.toMap()

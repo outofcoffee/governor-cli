@@ -1,10 +1,13 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.4.30'
     id 'application'
+    id 'com.bmuschko.docker-java-application' version '6.7.0'
+    id "com.palantir.git-version" version "0.12.3"
 }
 
 ext {
     version_log4j = '2.5'
+    appVersion = gitVersion()
 }
 
 group 'org.example'
@@ -43,4 +46,12 @@ mainClassName = 'io.gatehill.governor.Governor'
 
 test {
     useJUnitPlatform()
+}
+
+docker {
+    javaApplication {
+        baseImage = 'adoptopenjdk:11-jre-hotspot'
+        maintainer = 'Pete Cornish'
+        images = ["outofcoffee/guvernor:$appVersion", 'outofcoffee/guvernor:latest']
+    }
 }

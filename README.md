@@ -31,12 +31,53 @@ Options:
     --help, -h -> Usage info 
 ```
 
+### Quick start
+
+The `examples` directory contains sample OpenAPI specifications and rules.
+
+If you have Docker installed, use the convenience script that wraps the Docker image build, then
+starts a container passing through arguments.
+
+Prerequisites:
+- JDK 8 or newer
+- Docker
+
+Usage:
+
+    ./governor.sh [args]
+
+> See above for list of valid arguments.
+
+Example:
+
+    $ ./governor.sh -s ./examples/petstore_v2.yaml -p ./examples/petstore_v1.yaml -r ./examples/ruleset.yaml
+    
+    WARN  io.gatehill.governor.RuleEnforcer - Failing rules:
+    required-parameters-added: Required parameter 'category' in GET /pets: new in latest version
+
 ## Building
+
+### Using Docker
+
+This method builds a Docker image, named `outofcoffee/guvernor:latest`. You can then bind-mount a directory containing your specifications, use it as a base image etc.
+
+Build:
+
+    ./gradlew dockerBuildImage
+
+Test:
+
+    docker run --rm -it -v $PWD/examples:/app/examples outofcoffee/guvernor:latest \
+            -s ./examples/petstore_v2.yaml -p ./examples/petstore_v1.yaml -r ./examples/ruleset.yaml
+
+### Without Docker
+
+This method builds an application distributable, with entrypoint scripts for *NIX and Windows, under the `build/install/openapi-governor/bin` directory.
 
 Build:
 
     ./gradlew installDist
 
-Testing:
+Test:
 
     ./build/install/openapi-governor/bin/openapi-governor -s ./examples/petstore_v2.yaml -p ./examples/petstore_v1.yaml -r ./examples/ruleset.yaml

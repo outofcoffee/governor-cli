@@ -1,4 +1,4 @@
-package io.gatehill.governor.model.rules
+package io.gatehill.governor.rules
 
 import io.gatehill.governor.SpecificationParser
 import io.gatehill.governor.model.eval.EvaluationContext

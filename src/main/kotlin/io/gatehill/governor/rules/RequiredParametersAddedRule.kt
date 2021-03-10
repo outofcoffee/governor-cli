@@ -1,8 +1,9 @@
-package io.gatehill.governor.model.rules
+package io.gatehill.governor.rules
 
 import io.gatehill.governor.model.RuleInfo
 import io.gatehill.governor.model.eval.EvaluationContext
 import io.gatehill.governor.model.eval.EvaluationResult
+import io.gatehill.governor.model.rules.AbstractRule
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
@@ -19,18 +20,7 @@ class RequiredParametersAddedRule : AbstractRule() {
             previousSpecPaths[path.key]?.let { previousSpecPath ->
                 // path exists in both spec versions
                 path.value.readOperationsMap().map { it.toPair() }.forEach { opEntry ->
-                    previousSpecPath.readOperationsMap()[opEntry.first]?.let { previousSpecOp ->
-                        // operation exists in both spec versions
-                        newlyRequired += checkForNewRequiredParams(path.key, opEntry, previousSpecOp)
-
-                    } ?: run {
-                        // operation is new in latest version
-                        newlyRequired += describeRequiredParams(
-                            path.key,
-                            opEntry,
-                            "parent operation block is new in latest version"
-                        )
-                    }
+                    newlyRequired += checkPathOperations(path.key, opEntry, previousSpecPath)
                 }
 
             } ?: run {
@@ -52,8 +42,7 @@ class RequiredParametersAddedRule : AbstractRule() {
         path: String,
         opEntry: Pair<PathItem.HttpMethod, Operation>,
         reason: String
-    ) = opEntry.second.parameters?.filter { it.required }
-        ?.map { describeRequiredParam(path, opEntry, it, reason) }
+    ) = opEntry.second.parameters?.filter { it.required }?.map { describeRequiredParam(path, opEntry, it, reason) }
         ?: emptyList()
 
     private fun describeRequiredParam(
@@ -62,6 +51,29 @@ class RequiredParametersAddedRule : AbstractRule() {
         parameter: Parameter,
         reason: String
     ) = "Required parameter '${parameter.name}' in ${opEntry.first.name} $path: $reason"
+
+    private fun checkPathOperations(
+        path: String,
+        currentSpecOp: Pair<PathItem.HttpMethod, Operation>,
+        previousSpecPath: PathItem
+    ): MutableList<String> {
+        val newlyRequired = mutableListOf<String>()
+
+        previousSpecPath.readOperationsMap()[currentSpecOp.first]?.let { previousSpecOp ->
+            // operation exists in both spec versions
+            newlyRequired += checkForNewRequiredParams(path, currentSpecOp, previousSpecOp)
+
+        } ?: run {
+            // operation is new in latest version
+            newlyRequired += describeRequiredParams(
+                path,
+                currentSpecOp,
+                "parent operation block is new in latest version"
+            )
+        }
+
+        return newlyRequired
+    }
 
     private fun checkForNewRequiredParams(
         path: String,

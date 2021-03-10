@@ -17,4 +17,4 @@ set -e
 
 ./gradlew dockerBuildImage --quiet
 
-docker run --rm -it -v $PWD/examples:/app/examples outofcoffee/guvernor:latest "$@"
+exec docker run --rm -it -v $PWD/examples:/app/examples outofcoffee/guvernor:latest "$@"

@@ -28,9 +28,9 @@ Options:
     --currentSpecFile, -s -> OpenAPI specification file (always required) { String }
     --previousSpecFile, -p -> Previous OpenAPI specification file { String }
     --rulesFile, -r -> Rules file (always required) { String }
-    --help, -h -> Usage info 
+    --nonZeroExitCodeOnFailure, -z -> Return a non-zero exit code if rule evaluation fails
+    --help, -h -> Usage info
 ```
-
 ### Quick start
 
 The `examples` directory contains sample OpenAPI specifications and rules.

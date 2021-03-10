@@ -1,6 +1,6 @@
 package io.gatehill.governor
 
-import io.gatehill.governor.model.rules.RequiredParametersAddedRule
+import io.gatehill.governor.rules.RequiredParametersAddedRule
 import io.gatehill.governor.support.TestUtil
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.BeforeEach

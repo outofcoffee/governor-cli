@@ -10,8 +10,8 @@ ext {
     appVersion = gitVersion()
 }
 
-group 'org.example'
-version '1.0-SNAPSHOT'
+group 'io.gatehill'
+version '0.1.0-SNAPSHOT'
 
 repositories {
     mavenCentral()

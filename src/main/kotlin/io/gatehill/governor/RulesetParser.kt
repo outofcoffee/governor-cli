@@ -6,7 +6,7 @@ import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import io.gatehill.governor.model.Rule
 import io.gatehill.governor.model.Ruleset
 import io.gatehill.governor.model.config.RulesetDef
-import io.gatehill.governor.model.rules.RequiredParametersAddedRule
+import io.gatehill.governor.rules.RequiredParametersAddedRule
 import java.nio.file.Paths
 
 class RulesetParser {

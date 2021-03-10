@@ -23,6 +23,6 @@ class RulesetParserTest {
     fun `should parse ruleset`() {
         val ruleset = parser.loadFromFile(rulesFile.toString())
         assertThat(ruleset.rules.size).isEqualTo(1)
-        assertThat(ruleset.rules[0].javaClass).isEqualTo(RequiredParametersAddedRule::class.java)
+        assertThat(ruleset.rules[0].rule.javaClass).isEqualTo(RequiredParametersAddedRule::class.java)
     }
 }

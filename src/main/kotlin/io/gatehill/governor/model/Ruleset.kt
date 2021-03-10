@@ -1,5 +1,5 @@
 package io.gatehill.governor.model
 
 data class Ruleset(
-    val rules: List<Rule>
+    val rules: List<ReifiedRule>
 )

@@ -1,2 +1,4 @@
 rules:
   - required-parameters-added
+  - object-path:
+      path: $.info.title

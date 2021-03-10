@@ -9,9 +9,10 @@ class RuleEnforcer {
     private val logger = LogManager.getLogger(RuleEnforcer::class.java)
 
     fun enforce(currentSpec: OpenAPI, previousSpec: OpenAPI? = null, ruleset: Ruleset): Boolean {
-        val context = EvaluationContext(currentSpec, previousSpec)
-
-        val results = ruleset.rules.map { rule -> rule to rule.test(context) }.toMap()
+        val results = ruleset.rules.map {
+            val context = EvaluationContext(currentSpec, previousSpec, it.config)
+            it.rule to it.rule.test(context)
+        }.toMap()
 
         val passedRules = results.filter { it.value.success }
         val failedRules = results.filterNot { it.value.success }

@@ -5,6 +5,7 @@ import io.gatehill.governor.model.eval.EvaluationResult
 
 interface Rule {
     val info: RuleInfo
+    val configClass: Class<*>?
 
     fun test(context: EvaluationContext): EvaluationResult
 }

@@ -10,5 +10,8 @@ abstract class AbstractRule : Rule {
             ?: throw IllegalStateException("Missing rule info for: ${this::class.qualifiedName}")
     }
 
+    override val configClass: Class<*>?
+        get() = throw IllegalStateException("${this::class.qualifiedName} does not have a configuration class")
+
     override fun toString() = "Rule[${info.name}]"
 }

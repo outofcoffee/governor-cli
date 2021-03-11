@@ -21,7 +21,7 @@ This check works for the following scenarios:
 
 ## Rules
 
-Set rules for your OpenAPI specifications, to ensure certain fields are populated, present, or absent.
+In addition to the `required-parameters-added` rule, you can set a variety of other rules for your OpenAPI specifications. For example, you can require certain fields are populated, present, or absent.
 
 ```
 # ruleset.yaml
@@ -91,18 +91,61 @@ Let's start with the following file structure:
 ```
 specs/
  ∟ petstore_v1.yaml
+ ∟ ruleset.yaml
+```
+
+In this example, `petstore_v1.yaml` is your OpenAPI specification. The `ruleset.yaml` file lists the rules you want to enforce against your specification.
+
+Here's an example ruleset:
+
+```
+# ruleset.yaml
+rules:
+  # ensure the title matches the expected value
+  - value-at-path:
+      path: $.info.title
+      operator: EqualTo
+      value: Swagger Petstore
+
+  # ensure the location is not blank
+  - value-at-path:
+      path: $.info.location
+      operator: Exists
+```
+
+Run Governor as follows:
+
+    docker run --rm -it -v $PWD/specs:/app/specs outofcoffee/governor \
+                -s ./specs/petstore_v1.yaml -r ./specs/ruleset.yaml
+
+> Note that this uses the bind-mount mechanism in Docker. Therefore the `./specs` prefix for the files, refers to the path `/app/spec` within the container filesystem.
+
+### Comparing between versions
+
+Some rules allow you to check for differences between specification versions. For example, you may have modified your specification to introduce a new mandatory parameter. Knowing this might be important to help you avoid backwards compatibility issues as you roll out your new API version.
+
+Let's add a second version of our OpenAPI specification, `petstore_v2.yaml`. For the purposes of this example, let's add a new, required, parameter to v2 of the specification. This results in the following file structure:
+
+```
+specs/
+ ∟ petstore_v1.yaml
  ∟ petstore_v2.yaml
  ∟ ruleset.yaml
 ```
 
-In this example, `petstore_v1.yaml` and `petstore_v2.yaml` are two different versions of an OpenAPI specification. The `ruleset.yaml` file lists the rules you want to enforce against your specifications.
+Now add the following rule to our ruleset file:
 
-Run Governor as follows:
+```
+  # check if there are newly required parameters
+  - required-parameters-added
+``` 
 
-    docker run --rm -it -v $PWD/spec:/app/spec outofcoffee/governor \
-                -s ./spec/petstore_v2.yaml -p ./spec/petstore_v1.yaml -r ./spec/ruleset.yaml
+Run Governor as follows - note the use of the `-p` (previous version) flag:
 
-> Note that this uses the bind-mount mechanism in Docker. Therefore the `./spec` prefix for the files, refers to the path `/app/spec` within the container filesystem.
+    docker run --rm -it -v $PWD/specs:/app/specs outofcoffee/governor \
+                -s ./specs/petstore_v2.yaml -p ./specs/petstore_v1.yaml -r ./specs/ruleset.yaml
+
+As there is a new mandatory ('required') parameter between v1 and v2 of the specification, the `required-parameters-added` rule will pick this up.
 
 ### Usage
 
@@ -120,9 +163,13 @@ Options:
 
 When Governor runs, it produces output indicating which rules pass and fail. By default, it will exit with status 0. If you'd like the exit code to reflect whether all rules were evaluated successfully, pass the `-z` flag. In this case, if all rules pass, the exit code will be 0, otherwise it will be 1.
 
+This can be useful when scripting your CI/CD pipeline to cause a build or deployment to fail if rules are not satisfied.
+
 ## Building
 
-### Using Docker
+If you don't want to use the prebuilt Docker image, you can build Governor yourself.
+
+### With Docker
 
 This method builds a Docker image, named `outofcoffee/governor:latest`. You can then bind-mount a directory containing your specifications, use it as a base image etc.
 

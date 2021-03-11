@@ -8,7 +8,7 @@ import io.gatehill.governor.model.eval.EvaluationResult
 import io.gatehill.governor.model.rules.AbstractRule
 import io.gatehill.governor.util.SerialisationUtil
 
-@RuleInfo("object-path")
+@RuleInfo("value-at-path")
 class ObjectPathRule : AbstractRule() {
     override val configClass: Class<*> = ObjectRuleConfig::class.java
 
@@ -17,13 +17,85 @@ class ObjectPathRule : AbstractRule() {
         val specJson = SerialisationUtil.jsonMapper.writeValueAsString(context.currentSpec)
         val documentContext = JsonPath.parse(specJson)
 
-        return try {
-            val pathValue = documentContext.read<String?>(config.path)
-            EvaluationResult(pathValue?.isNotBlank() == true)
+        val pathValue = try {
+            documentContext.read<Any?>(config.path)
         } catch (e: PathNotFoundException) {
-            EvaluationResult(false, "blank value at: ${config.path}")
+            null
+        }
+
+        return when (config.operator) {
+            ObjectRuleConfig.ObjectRuleOperator.Exists -> checkExists(config, pathValue)
+            ObjectRuleConfig.ObjectRuleOperator.NotExists -> checkExists(config, pathValue, true)
+            ObjectRuleConfig.ObjectRuleOperator.Blank -> checkBlank(config, pathValue as String)
+            ObjectRuleConfig.ObjectRuleOperator.NotBlank -> checkBlank(config, pathValue as String, true)
+            ObjectRuleConfig.ObjectRuleOperator.EqualTo -> checkEqual(config, pathValue as String)
+            ObjectRuleConfig.ObjectRuleOperator.NotEqualTo -> checkEqual(config, pathValue as String, true)
         }
     }
 
-    data class ObjectRuleConfig(val path: String)
+    /**
+     * Check if a block/object exists.
+     */
+    private fun checkExists(config: ObjectRuleConfig, pathValue: Any?, invert: Boolean = false): EvaluationResult {
+        return if (!invert && null != pathValue) {
+            EvaluationResult(
+                true,
+                "value at: ${config.path} ${if (invert) "does not exist" else "exists"}"
+            )
+        } else {
+            EvaluationResult(
+                false,
+                "mismatched value at: ${config.path} - expected ${if (invert) "does not exist" else "exists"}, actual: $pathValue"
+            )
+        }
+    }
+
+    /**
+     * Check if a string is blank.
+     */
+    private fun checkBlank(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): EvaluationResult {
+        return if (!invert && pathValue?.isNotBlank() == true) {
+            EvaluationResult(
+                true,
+                "value at: ${config.path} is ${if (invert) "blank" else "not blank"}"
+            )
+        } else {
+            EvaluationResult(
+                false,
+                "mismatched value at: ${config.path} - expected ${if (invert) "blank" else "not blank"}, actual: $pathValue"
+            )
+        }
+    }
+
+    /**
+     * Check if a string equals the specified value.
+     */
+    private fun checkEqual(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): EvaluationResult {
+        return if (!invert && pathValue?.equals(config.value) == true) {
+            EvaluationResult(
+                true,
+                "value at: ${config.path} ${if (invert) "!=" else "=="} $pathValue"
+            )
+        } else {
+            EvaluationResult(
+                false,
+                "mismatched value at: ${config.path} - expected ${if (invert) "!=" else "=="} ${config.value}, actual: $pathValue"
+            )
+        }
+    }
+
+    data class ObjectRuleConfig(
+        val path: String,
+        val operator: ObjectRuleOperator = ObjectRuleOperator.Exists,
+        val value: String? = null
+    ) {
+        enum class ObjectRuleOperator {
+            Exists,
+            NotExists,
+            Blank,
+            NotBlank,
+            EqualTo,
+            NotEqualTo
+        }
+    }
 }

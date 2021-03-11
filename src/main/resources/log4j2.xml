@@ -10,6 +10,7 @@
             <AppenderRef ref="Console"/>
         </Root>
         <Logger name="io.gatehill" level="debug"/>
-        <Logger name="io.swagger" level="info"/>
+        <Logger name="io.swagger" level="warn"/>
+        <Logger name="com.jayway.jsonpath" level="warn"/>
     </Loggers>
 </Configuration>

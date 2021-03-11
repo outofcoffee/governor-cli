@@ -1,4 +1,14 @@
 rules:
+  # check if there are newly required parameters
   - required-parameters-added
-  - object-path:
+
+  # ensure the title matches the expected value
+  - value-at-path:
       path: $.info.title
+      operator: EqualTo
+      value: Swagger Petstore
+
+  # ensure the location is not blank
+  - value-at-path:
+      path: $.info.location
+      operator: Exists

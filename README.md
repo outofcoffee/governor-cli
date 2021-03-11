@@ -96,7 +96,7 @@ Options:
 
 ### Using Docker
 
-This method builds a Docker image, named `outofcoffee/guvernor:latest`. You can then bind-mount a directory containing your specifications, use it as a base image etc.
+This method builds a Docker image, named `outofcoffee/governor:latest`. You can then bind-mount a directory containing your specifications, use it as a base image etc.
 
 Build:
 
@@ -104,7 +104,7 @@ Build:
 
 Test:
 
-    docker run --rm -it -v $PWD/examples:/app/examples outofcoffee/guvernor:latest \
+    docker run --rm -it -v $PWD/examples:/app/examples outofcoffee/governor:latest \
             -s ./examples/petstore_v2.yaml -p ./examples/petstore_v1.yaml -r ./examples/ruleset.yaml
 
 ### Without Docker

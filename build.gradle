@@ -52,6 +52,6 @@ docker {
     javaApplication {
         baseImage = 'adoptopenjdk:11-jre-hotspot'
         maintainer = 'Pete Cornish'
-        images = ["outofcoffee/guvernor:$appVersion", 'outofcoffee/guvernor:latest']
+        images = ["outofcoffee/governor:$appVersion", 'outofcoffee/governor:latest']
     }
 }

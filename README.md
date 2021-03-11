@@ -80,7 +80,31 @@ Example:
     Passed (1):
     ✅   value-at-path: value at: $.info.title == Swagger Petstore
 
-## Usage
+## Running Governor
+
+Governor images are pushed to [Docker Hub](https://hub.docker.com/r/outofcoffee/governor).
+
+> See the `examples` directory in this repository for sample files.
+
+Let's start with the following file structure:
+
+```
+specs/
+ ∟ petstore_v1.yaml
+ ∟ petstore_v2.yaml
+ ∟ ruleset.yaml
+```
+
+In this example, `petstore_v1.yaml` and `petstore_v2.yaml` are two different versions of an OpenAPI specification. The `ruleset.yaml` file lists the rules you want to enforce against your specifications.
+
+Run Governor as follows:
+
+    docker run --rm -it -v $PWD/spec:/app/spec outofcoffee/governor \
+                -s ./spec/petstore_v2.yaml -p ./spec/petstore_v1.yaml -r ./spec/ruleset.yaml
+
+> Note that this uses the bind-mount mechanism in Docker. Therefore the `./spec` prefix for the files, refers to the path `/app/spec` within the container filesystem.
+
+### Usage
 
 ```
 Usage: governor options_list
@@ -91,6 +115,10 @@ Options:
     --nonZeroExitCodeOnFailure, -z -> Return a non-zero exit code if rule evaluation fails
     --help, -h -> Usage info
 ```
+
+### Exit code
+
+When Governor runs, it produces output indicating which rules pass and fail. By default, it will exit with status 0. If you'd like the exit code to reflect whether all rules were evaluated successfully, pass the `-z` flag. In this case, if all rules pass, the exit code will be 0, otherwise it will be 1.
 
 ## Building
 

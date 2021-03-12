@@ -1,9 +1,12 @@
 package io.gatehill.governor
 
+import com.jayway.jsonpath.DocumentContext
+import com.jayway.jsonpath.JsonPath
 import io.gatehill.governor.model.Rule
 import io.gatehill.governor.model.Ruleset
 import io.gatehill.governor.model.eval.EvaluationContext
 import io.gatehill.governor.model.eval.EvaluationResult
+import io.gatehill.governor.util.SerialisationUtil
 import io.swagger.v3.oas.models.OpenAPI
 import org.apache.logging.log4j.LogManager
 
@@ -11,8 +14,13 @@ class RuleEnforcer {
     private val logger = LogManager.getLogger(RuleEnforcer::class.java)
 
     fun enforce(currentSpec: OpenAPI, previousSpec: OpenAPI? = null, ruleset: Ruleset): Boolean {
+        // cache JSONPath context for better performance across rules
+        val currentSpecJsonPath: DocumentContext by lazy {
+            JsonPath.parse(SerialisationUtil.jsonMapper.writeValueAsString(currentSpec))
+        }
+
         val results = ruleset.rules.map {
-            val context = EvaluationContext(currentSpec, previousSpec, it.config)
+            val context = EvaluationContext(currentSpec, previousSpec, it.config, currentSpecJsonPath)
             EvaluatedRule(
                 rule = it.rule,
                 result = it.rule.test(context)

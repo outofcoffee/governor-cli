@@ -26,10 +26,10 @@ class ObjectPathRule : AbstractRule() {
         return when (config.operator) {
             ObjectRuleConfig.ObjectRuleOperator.Exists -> checkExists(config, pathValue)
             ObjectRuleConfig.ObjectRuleOperator.NotExists -> checkExists(config, pathValue, true)
-            ObjectRuleConfig.ObjectRuleOperator.Blank -> checkBlank(config, pathValue as String)
-            ObjectRuleConfig.ObjectRuleOperator.NotBlank -> checkBlank(config, pathValue as String, true)
-            ObjectRuleConfig.ObjectRuleOperator.EqualTo -> checkEqual(config, pathValue as String)
-            ObjectRuleConfig.ObjectRuleOperator.NotEqualTo -> checkEqual(config, pathValue as String, true)
+            ObjectRuleConfig.ObjectRuleOperator.Blank -> checkNotBlank(config, pathValue as? String, true)
+            ObjectRuleConfig.ObjectRuleOperator.NotBlank -> checkNotBlank(config, pathValue as? String)
+            ObjectRuleConfig.ObjectRuleOperator.EqualTo -> checkEquals(config, pathValue as? String)
+            ObjectRuleConfig.ObjectRuleOperator.NotEqualTo -> checkEquals(config, pathValue as? String, true)
         }
     }
 
@@ -51,9 +51,9 @@ class ObjectPathRule : AbstractRule() {
     }
 
     /**
-     * Check if a string is blank.
+     * Check if a string is not blank.
      */
-    private fun checkBlank(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): EvaluationResult {
+    private fun checkNotBlank(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): EvaluationResult {
         return if (!invert && pathValue?.isNotBlank() == true) {
             EvaluationResult(
                 true,
@@ -70,7 +70,7 @@ class ObjectPathRule : AbstractRule() {
     /**
      * Check if a string equals the specified value.
      */
-    private fun checkEqual(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): EvaluationResult {
+    private fun checkEquals(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): EvaluationResult {
         return if (!invert && pathValue?.equals(config.value) == true) {
             EvaluationResult(
                 true,

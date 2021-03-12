@@ -29,18 +29,22 @@ internal class RequiredParametersAddedRuleTest {
 
     @Test
     fun `should throw exception when missing previous spec`() {
-        val context = EvaluationContext(currentSpec, null)
+        val context = EvaluationContext(
+            currentSpec = currentSpec
+        )
 
         assertThrows(IllegalStateException::class.java) { rule.test(context) }
     }
 
     @Test
     fun `should find newly added required parameters`() {
-        val context = EvaluationContext(currentSpec, previousSpec)
+        val context = EvaluationContext(
+            currentSpec = currentSpec,
+            previousSpec = previousSpec
+        )
         val result = rule.test(context)
 
         assertFalse(result.success, "Rule should evaluate to failed")
-        assertNotNull(result.message, "Result message should be populated")
         assertEquals("Required parameter 'category' in GET /pets: new in latest version", result.message)
     }
 }

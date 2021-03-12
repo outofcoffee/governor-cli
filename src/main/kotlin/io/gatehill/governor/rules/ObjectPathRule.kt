@@ -1,12 +1,10 @@
 package io.gatehill.governor.rules
 
-import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.PathNotFoundException
 import io.gatehill.governor.model.RuleInfo
 import io.gatehill.governor.model.eval.EvaluationContext
 import io.gatehill.governor.model.eval.EvaluationResult
 import io.gatehill.governor.model.rules.AbstractRule
-import io.gatehill.governor.util.SerialisationUtil
 
 @RuleInfo("value-at-path")
 class ObjectPathRule : AbstractRule() {
@@ -14,11 +12,9 @@ class ObjectPathRule : AbstractRule() {
 
     override fun test(context: EvaluationContext): EvaluationResult {
         val config = context.ruleConfig as ObjectRuleConfig
-        val specJson = SerialisationUtil.jsonMapper.writeValueAsString(context.currentSpec)
-        val documentContext = JsonPath.parse(specJson)
 
         val pathValue = try {
-            documentContext.read<Any?>(config.path)
+            context.currentSpecJsonPath!!.read<Any?>(config.path)
         } catch (e: PathNotFoundException) {
             null
         }

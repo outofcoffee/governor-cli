@@ -2,6 +2,7 @@ package io.gatehill.governor
 
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.parser.OpenAPIV3Parser
+import io.swagger.v3.parser.core.models.ParseOptions
 import java.nio.file.Paths
 
 class SpecificationParser {
@@ -11,7 +12,8 @@ class SpecificationParser {
             throw IllegalArgumentException("OpenAPI specification file: ${specFilePath} does not exist")
         }
 
-        return OpenAPIV3Parser().read(specFilePath)
+        // resolve references fully to enable property/schema traversal
+        return OpenAPIV3Parser().read(specFilePath, null, ParseOptions().apply { isResolveFully = true })
     }
 
     companion object {

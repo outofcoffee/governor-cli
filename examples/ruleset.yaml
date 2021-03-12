@@ -2,6 +2,9 @@ rules:
   # check if there are newly required parameters
   - required-parameters-added
 
+  # check if there are newly required properties
+  - required-properties-added
+
   # ensure the title matches the expected value
   - value-at-path:
       path: $.info.title

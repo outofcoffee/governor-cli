@@ -118,7 +118,7 @@ Run Governor as follows:
     docker run --rm -it -v $PWD/specs:/app/specs outofcoffee/governor \
                 -s ./specs/petstore_v1.yaml -r ./specs/ruleset.yaml
 
-> Note that this uses the bind-mount mechanism in Docker. Therefore the `./specs` prefix for the files, refers to the path `/app/spec` within the container filesystem.
+> Note that this uses the bind-mount mechanism in Docker. Therefore the `./specs` prefix for the files, refers to the path `/app/specs` within the container filesystem.
 
 ### Comparing between versions
 

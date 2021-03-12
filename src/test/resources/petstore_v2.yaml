@@ -60,6 +60,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+      requestBody:
+        $ref: '#/components/requestBodies/Pet'
   /pets/{petId}:
     get:
       summary: Info for a specific pet
@@ -87,6 +89,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 components:
+  requestBodies:
+    Pet:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Pet'
+      description: The pet to add
+      required: true
   schemas:
     Pet:
       type: object

@@ -5,6 +5,7 @@ import io.gatehill.governor.model.config.ConfigMetadata
 import io.gatehill.governor.model.eval.EvaluationContext
 import io.gatehill.governor.model.eval.EvaluationResult
 import io.gatehill.governor.model.eval.SingleValueResult
+import java.lang.IllegalStateException
 
 @ConfigMetadata("check-value")
 class ObjectValueRule : AbstractRule() {
@@ -22,10 +23,12 @@ class ObjectValueRule : AbstractRule() {
         return when (config.operator) {
             ObjectRuleConfig.ObjectRuleOperator.Exists -> checkExists(config, pathValue)
             ObjectRuleConfig.ObjectRuleOperator.NotExists -> checkExists(config, pathValue, true)
-            ObjectRuleConfig.ObjectRuleOperator.Blank -> checkNotBlank(config, pathValue as? String, true)
-            ObjectRuleConfig.ObjectRuleOperator.NotBlank -> checkNotBlank(config, pathValue as? String)
+            ObjectRuleConfig.ObjectRuleOperator.Blank -> checkBlank(config, pathValue as? String)
+            ObjectRuleConfig.ObjectRuleOperator.NotBlank -> checkBlank(config, pathValue as? String, true)
             ObjectRuleConfig.ObjectRuleOperator.EqualTo -> checkEquals(config, pathValue as? String)
             ObjectRuleConfig.ObjectRuleOperator.NotEqualTo -> checkEquals(config, pathValue as? String, true)
+            ObjectRuleConfig.ObjectRuleOperator.Contains -> checkContains(config, pathValue as? String)
+            ObjectRuleConfig.ObjectRuleOperator.NotContains -> checkContains(config, pathValue as? String, true)
         }
     }
 
@@ -49,19 +52,19 @@ class ObjectValueRule : AbstractRule() {
     }
 
     /**
-     * Check if a string is not blank.
+     * Check if a string is blank.
      */
-    private fun checkNotBlank(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): SingleValueResult {
-        return if (!invert && pathValue?.isNotBlank() == true) {
+    private fun checkBlank(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): SingleValueResult {
+        return if (!invert == pathValue.isNullOrBlank()) {
             SingleValueResult(
                 true,
-                "value at: ${config.at} is ${if (invert) "blank" else "not blank"}",
+                "value at: ${config.at} is ${if (invert) "not blank" else "blank"}",
                 config.at
             )
         } else {
             SingleValueResult(
                 false,
-                "mismatched value at: ${config.at} - expected ${if (invert) "blank" else "not blank"}, actual: $pathValue",
+                "mismatched value at: ${config.at} - expected ${if (invert) "not blank" else "blank"}, actual: $pathValue",
                 config.at
             )
         }
@@ -71,16 +74,41 @@ class ObjectValueRule : AbstractRule() {
      * Check if a string equals the specified value.
      */
     private fun checkEquals(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): SingleValueResult {
-        return if (!invert && pathValue?.equals(config.value) == true) {
+        if (null == config.value) {
+            throw IllegalStateException("Missing configuration value for equality check at: ${config.at}")
+        }
+        return if (!invert == pathValue?.equals(config.value)) {
             SingleValueResult(
                 true,
-                "value at: ${config.at} ${if (invert) "!=" else "=="} $pathValue",
+                "value at: ${config.at} ${if (invert) "!=" else "=="} ${config.value}",
                 config.at
             )
         } else {
             SingleValueResult(
                 false,
                 "mismatched value at: ${config.at} - expected ${if (invert) "!=" else "=="} ${config.value}, actual: $pathValue",
+                config.at
+            )
+        }
+    }
+
+    /**
+     * Check if a string contains the specified value.
+     */
+    private fun checkContains(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): SingleValueResult {
+        if (null == config.value) {
+            throw IllegalStateException("Missing configuration value for contains check at: ${config.at}")
+        }
+        return if (!invert == pathValue?.contains(config.value)) {
+            SingleValueResult(
+                true,
+                "value at: ${config.at} ${if (invert) "does not contain" else "contains"} ${config.value}",
+                config.at
+            )
+        } else {
+            SingleValueResult(
+                false,
+                "mismatched value at: ${config.at} - expected ${if (invert) "does not contain" else "contains"} ${config.value}, actual: $pathValue",
                 config.at
             )
         }
@@ -97,7 +125,9 @@ class ObjectValueRule : AbstractRule() {
             Blank,
             NotBlank,
             EqualTo,
-            NotEqualTo
+            NotEqualTo,
+            Contains,
+            NotContains
         }
     }
 }

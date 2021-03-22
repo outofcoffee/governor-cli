@@ -12,7 +12,9 @@ Enforce rules against OpenAPI specifications.
     ❌   required-parameters-added: Required parameter 'category' in GET /pets: new in latest version
     ❌   check-value: mismatched value at: $.info.location - expected exists, actual: null
 
-You can compare between different schema document versions to check for compatibility differences, or you might want to ensure certain values are always populated in your OpenAPI specifications to enforce your documentation standards.
+* compare between different schema document versions to check for compatibility differences
+* ensure certain values are always populated in your OpenAPI specifications to enforce your documentation standards
+* also supports a simple accept/approve workflow using git
 
 ## Backwards compatibility checking
 
@@ -41,7 +43,7 @@ rules:
 
 That's it! 🥳
 
-There is also a similar rule to check for schema changes, such as the introduction of a new mandatory property:
+There is also a similar rule to check for breaking changes in your schema, such as the introduction of a new mandatory property:
 
 ```yaml
 # ruleset.yaml
@@ -79,6 +81,8 @@ The `check-value` rule supports the following operators:
 - NotBlank
 - EqualTo
 - NotEqualTo
+- Contains
+- NotContains
 
 ## Quick start
 

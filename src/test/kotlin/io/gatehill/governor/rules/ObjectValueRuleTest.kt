@@ -53,6 +53,38 @@ internal class ObjectValueRuleTest {
     }
 
     @Test
+    fun `should pass on finding blank value at path`() {
+        val context = EvaluationContext(
+            currentSpec = currentSpec,
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(
+                at = "$.contact.name",
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.Blank
+            ),
+            currentSpecJsonPath = currentSpecJsonPath
+        )
+        val result = rule.test(context)
+
+        Assertions.assertTrue(result.success, "Rule should evaluate to passed")
+        Assertions.assertEquals("value at: \$.contact.name is blank", result.message)
+    }
+
+    @Test
+    fun `should fail on finding non-blank value at path`() {
+        val context = EvaluationContext(
+            currentSpec = currentSpec,
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(
+                at = "$.info.title",
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.Blank
+            ),
+            currentSpecJsonPath = currentSpecJsonPath
+        )
+        val result = rule.test(context)
+
+        Assertions.assertFalse(result.success, "Rule should evaluate to failed")
+        Assertions.assertEquals("mismatched value at: \$.info.title - expected blank, actual: Swagger Petstore", result.message)
+    }
+
+    @Test
     fun `should pass on finding non-blank value at path`() {
         val context = EvaluationContext(
             currentSpec = currentSpec,
@@ -69,19 +101,19 @@ internal class ObjectValueRuleTest {
     }
 
     @Test
-    fun `should fail on non-blank value at path`() {
+    fun `should fail on finding blank value at path`() {
         val context = EvaluationContext(
             currentSpec = currentSpec,
             ruleConfig = ObjectValueRule.ObjectRuleConfig(
                 at = "$.info.title",
-                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.Blank
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.NotBlank
             ),
             currentSpecJsonPath = currentSpecJsonPath
         )
         val result = rule.test(context)
 
-        Assertions.assertFalse(result.success, "Rule should evaluate to failed")
-        Assertions.assertEquals("mismatched value at: \$.info.title - expected blank, actual: Swagger Petstore", result.message)
+        Assertions.assertTrue(result.success, "Rule should evaluate to passed")
+        Assertions.assertEquals("value at: \$.info.title is not blank", result.message)
     }
 
     @Test
@@ -102,6 +134,40 @@ internal class ObjectValueRuleTest {
     }
 
     @Test
+    fun `should fail on not matching value at path`() {
+        val context = EvaluationContext(
+            currentSpec = currentSpec,
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(
+                at = "$.info.title",
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.EqualTo,
+                value = "Another title"
+            ),
+            currentSpecJsonPath = currentSpecJsonPath
+        )
+        val result = rule.test(context)
+
+        Assertions.assertFalse(result.success, "Rule should evaluate to passed")
+        Assertions.assertEquals("mismatched value at: \$.info.title - expected == Another title, actual: Swagger Petstore", result.message)
+    }
+
+    @Test
+    fun `should pass on not matching value at path`() {
+        val context = EvaluationContext(
+            currentSpec = currentSpec,
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(
+                at = "$.info.version",
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.NotEqualTo,
+                value = "2.0.0"
+            ),
+            currentSpecJsonPath = currentSpecJsonPath
+        )
+        val result = rule.test(context)
+
+        Assertions.assertTrue(result.success, "Rule should evaluate to passed")
+        Assertions.assertEquals("value at: \$.info.version != 2.0.0", result.message)
+    }
+
+    @Test
     fun `should fail on matching unwanted value at path`() {
         val context = EvaluationContext(
             currentSpec = currentSpec,
@@ -116,5 +182,73 @@ internal class ObjectValueRuleTest {
 
         Assertions.assertFalse(result.success, "Rule should evaluate to failed")
         Assertions.assertEquals("mismatched value at: \$.info.version - expected != 1.0.0, actual: 1.0.0", result.message)
+    }
+
+    @Test
+    fun `should pass when containing value at path`() {
+        val context = EvaluationContext(
+            currentSpec = currentSpec,
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(
+                at = "$.info.title",
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.Contains,
+                value = "Petstore"
+            ),
+            currentSpecJsonPath = currentSpecJsonPath
+        )
+        val result = rule.test(context)
+
+        Assertions.assertTrue(result.success, "Rule should evaluate to passed")
+        Assertions.assertEquals("value at: \$.info.title contains Petstore", result.message)
+    }
+
+    @Test
+    fun `should fail when not containing value at path`() {
+        val context = EvaluationContext(
+            currentSpec = currentSpec,
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(
+                at = "$.info.title",
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.Contains,
+                value = "Not found"
+            ),
+            currentSpecJsonPath = currentSpecJsonPath
+        )
+        val result = rule.test(context)
+
+        Assertions.assertFalse(result.success, "Rule should evaluate to failed")
+        Assertions.assertEquals("mismatched value at: \$.info.title - expected contains Not found, actual: Swagger Petstore", result.message)
+    }
+
+    @Test
+    fun `should pass when does not contain value at path`() {
+        val context = EvaluationContext(
+            currentSpec = currentSpec,
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(
+                at = "$.servers[0].url",
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.NotContains,
+                value = "example.com"
+            ),
+            currentSpecJsonPath = currentSpecJsonPath
+        )
+        val result = rule.test(context)
+
+        Assertions.assertTrue(result.success, "Rule should evaluate to passed")
+        Assertions.assertEquals("value at: \$.servers[0].url does not contain example.com", result.message)
+    }
+
+    @Test
+    fun `should fail when containing unwanted value at path`() {
+        val context = EvaluationContext(
+            currentSpec = currentSpec,
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(
+                at = "$.servers[0].url",
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.NotContains,
+                value = "swagger.io"
+            ),
+            currentSpecJsonPath = currentSpecJsonPath
+        )
+        val result = rule.test(context)
+
+        Assertions.assertFalse(result.success, "Rule should evaluate to failed")
+        Assertions.assertEquals("mismatched value at: \$.servers[0].url - expected does not contain swagger.io, actual: http://petstore.swagger.io/v1", result.message)
     }
 }

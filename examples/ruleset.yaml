@@ -15,3 +15,9 @@ rules:
   - check-value:
       at: $.info.location
       operator: Exists
+
+  # ensure the first server URL does not contain example.com
+  - check-value:
+      at: $.servers[0].url
+      operator: NotContains
+      value: example.com

@@ -3,15 +3,26 @@ OpenAPI Governor
 
 Enforce rules against OpenAPI specifications.
 
-## Example
-
-Say you have added a new, required, parameter in the latest version of your OpenAPI specification.
-
-When you run Governor, passing the path of the previous and latest versions of your OpenAPI specifications, the `required-parameters-added` rule will fail with the following message:
-
-    $ governor -s ./examples/petstore_v2.yaml -p ./examples/petstore_v1.yaml -r ./examples/ruleset.yaml
+    $ governor -s ./petstore_v2.yaml -p ./petstore_v1.yaml -r ./ruleset.yaml
     
-    Required parameter 'category' in GET /pets: new in latest version
+    Passed (1):
+    ✅   check-value: value at: $.info.title == Swagger Petstore
+
+    Failed (2):
+    ❌   required-parameters-added: Required parameter 'category' in GET /pets: new in latest version
+    ❌   check-value: mismatched value at: $.info.location - expected exists, actual: null
+
+You can compare between different schema document versions to check for compatibility differences, or you might want to ensure certain values are always populated in your OpenAPI specifications to enforce your documentation standards.
+
+## Backwards compatibility checking
+
+Say you have added a new, required, parameter named `category` in the latest version of your OpenAPI specification. Knowing this might be important to help you avoid backwards compatibility issues as you roll out your new API version.
+
+When you run Governor, passing the path of the previous and latest versions of your OpenAPI specifications, the `required-parameters-added` rule will pick this up:
+
+    $ governor -s ./petstore_v2.yaml -p ./petstore_v1.yaml -r ./ruleset.yaml
+    
+    ❌   required-parameters-added: Required parameter 'category' in GET /pets: new in latest version
 
 This check works for the following scenarios:
 
@@ -19,16 +30,35 @@ This check works for the following scenarios:
 - a new parameter is added, and marked as required
 - a new path or operation is added containing required parameters
 
-## Rules
-
-In addition to the `required-parameters-added` rule, you can set a variety of other rules for your OpenAPI specifications. For example, you can require certain fields are populated, present, or absent.
+Here is the configuration:
 
 ```yaml
 # ruleset.yaml
 rules:
   # check if there are newly required parameters
   - required-parameters-added
-  
+```
+
+That's it! 🥳
+
+There is also a similar rule to check for schema changes, such as the introduction of a new mandatory property:
+
+```yaml
+# ruleset.yaml
+rules:
+  # check if there are newly required properties
+  - required-properties-added
+```
+
+This is just the start. There is much more you can do with Governor beyond backwards compatibility checking.
+
+## Flexible rules
+
+In addition to the `required-parameters-added` and `required-properties-added` rules, you can set a variety of other rules for your OpenAPI specifications. For example, you can require certain fields are populated, or match a particular value.
+
+```yaml
+# ruleset.yaml
+rules:
   # ensure the title matches the expected value
   - check-value:
       at: $.info.title
@@ -119,7 +149,7 @@ Run Governor as follows:
                 -s ./examples/petstore_v1.yaml \
                 -r ./examples/ruleset.yaml
 
-> Note that this uses the bind-mount mechanism in Docker. Therefore the `./examples` prefix for the files, refers to the path `/app/examples` within the container filesystem.
+> Note that this uses the bind-mount mechanism in Docker. Therefore, the `./examples` prefix for the files refers to the path `/app/examples` within the container filesystem.
 
 ## Comparing between versions
 

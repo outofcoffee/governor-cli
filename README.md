@@ -30,18 +30,18 @@ rules:
   - required-parameters-added
   
   # ensure the title matches the expected value
-  - value-at-path:
-      path: $.info.title
+  - check-value:
+      at: $.info.title
       operator: EqualTo
       value: Swagger Petstore
 
   # ensure the location is not blank
-  - value-at-path:
-      path: $.info.location
+  - check-value:
+      at: $.info.location
       operator: Exists
 ```
 
-The `value-at-path` rule supports the following operators:
+The `check-value` rule supports the following operators:
 
 - Exists
 - NotExists
@@ -75,10 +75,10 @@ Example:
     
     Failed (2):
     ❌   required-parameters-added: Required parameter 'category' in GET /pets: new in latest version
-    ❌   value-at-path: mismatched value at: $.info.location - expected exists, actual: null
+    ❌   check-value: mismatched value at: $.info.location - expected exists, actual: null
     
     Passed (1):
-    ✅   value-at-path: value at: $.info.title == Swagger Petstore
+    ✅   check-value: value at: $.info.title == Swagger Petstore
 
 ## Running Governor
 
@@ -102,14 +102,14 @@ Here's an example ruleset:
 # ruleset.yaml
 rules:
   # ensure the title matches the expected value
-  - value-at-path:
-      path: $.info.title
+  - check-value:
+      at: $.info.title
       operator: EqualTo
       value: Swagger Petstore
 
   # ensure the location is not blank
-  - value-at-path:
-      path: $.info.location
+  - check-value:
+      at: $.info.location
       operator: Exists
 ```
 
@@ -120,7 +120,7 @@ Run Governor as follows:
 
 > Note that this uses the bind-mount mechanism in Docker. Therefore the `./specs` prefix for the files, refers to the path `/app/specs` within the container filesystem.
 
-### Comparing between versions
+## Comparing between versions
 
 Some rules allow you to check for differences between specification versions. For example, you may have modified your specification to introduce a new mandatory parameter. Knowing this might be important to help you avoid backwards compatibility issues as you roll out your new API version.
 
@@ -147,7 +147,7 @@ Run Governor as follows - note the use of the `-p` (previous version) flag:
 
 As there is a new mandatory ('required') parameter between v1 and v2 of the specification, the `required-parameters-added` rule will pick this up.
 
-### Filters: skipping rules or results
+## Filters: skipping rules or results
 
 You can ignore/skip differences using filters. This can be handy if you want to mark certain changes as accepted, or mitigated.
 
@@ -163,8 +163,8 @@ You can provide filters using a filters file. Here's an example:
 # filters.yaml
 filters:
   # ignore the license name
-  - ignore-object-path:
-      path: $.info.license.name
+  - ignore-value:
+      at: $.info.license.name
 
   # ignore changes to the pets request size parameter
   - ignore-parameter:
@@ -179,7 +179,13 @@ filters:
       property: colour
 ```
 
-Filters always take precedence over rules. For example, if we had a rule checking the path `$.info.license.name`, the filter configuration above would cause it to be skipped.
+Run Governor as follows - note the use of the `-f` (filters file) flag:
+
+    docker run --rm -it -v $PWD/specs:/app/specs outofcoffee/governor \
+                -s ./specs/petstore_v2.yaml -p ./specs/petstore_v1.yaml -r ./specs/ruleset.yaml \
+                -f ./specs/filters.yaml
+
+Filters always take precedence over rules. For example, if we had a rule checking the value `$.info.license.name`, the filter configuration above would cause it to be skipped.
 
 ### Usage
 

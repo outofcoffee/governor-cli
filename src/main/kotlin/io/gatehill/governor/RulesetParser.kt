@@ -5,7 +5,7 @@ import io.gatehill.governor.model.rules.ReifiedRule
 import io.gatehill.governor.model.rules.Rule
 import io.gatehill.governor.model.rules.Ruleset
 import io.gatehill.governor.model.config.RulesetDef
-import io.gatehill.governor.rules.ObjectPathRule
+import io.gatehill.governor.rules.ObjectValueRule
 import io.gatehill.governor.rules.RequiredParametersAddedRule
 import io.gatehill.governor.rules.RequiredPropertiesAddedRule
 import io.gatehill.governor.util.SerialisationUtil
@@ -15,7 +15,7 @@ class RulesetParser {
     private val registeredRules = listOf<Rule>(
         RequiredParametersAddedRule(),
         RequiredPropertiesAddedRule(),
-        ObjectPathRule()
+        ObjectValueRule()
     )
 
     private val rules = registeredRules.map { rule -> return@map rule.info.name to rule }.toMap()

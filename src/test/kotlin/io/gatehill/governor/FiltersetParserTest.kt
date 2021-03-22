@@ -1,6 +1,6 @@
 package io.gatehill.governor
 
-import io.gatehill.governor.filter.IgnoreObjectPathFilter
+import io.gatehill.governor.filter.IgnoreObjectValueFilter
 import io.gatehill.governor.filter.IgnoreParameterFilter
 import io.gatehill.governor.filter.IgnorePropertyFilter
 import io.gatehill.governor.support.TestUtil
@@ -24,8 +24,8 @@ class FiltersetParserTest {
         val filterset = parser.loadFromFile(filtersFile.toString())
         assertThat(filterset.filters.size).isEqualTo(3)
 
-        assertThat(filterset.filters[0].filter.javaClass).isEqualTo(IgnoreObjectPathFilter::class.java)
-        assertThat(filterset.filters[0].config?.javaClass).isEqualTo(IgnoreObjectPathFilter.ObjectPathFilterConfig::class.java)
+        assertThat(filterset.filters[0].filter.javaClass).isEqualTo(IgnoreObjectValueFilter::class.java)
+        assertThat(filterset.filters[0].config?.javaClass).isEqualTo(IgnoreObjectValueFilter.ObjectPathFilterConfig::class.java)
 
         assertThat(filterset.filters[1].filter.javaClass).isEqualTo(IgnoreParameterFilter::class.java)
         assertThat(filterset.filters[1].config?.javaClass).isEqualTo(IgnoreParameterFilter.IgnoreParameterConfig::class.java)

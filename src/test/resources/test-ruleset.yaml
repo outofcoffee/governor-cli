@@ -3,7 +3,7 @@ rules:
   - required-parameters-added
 
   # ensure the title matches the expected value
-  - value-at-path:
-      path: $.info.title
+  - check-value:
+      at: $.info.title
       operator: EqualTo
       value: Swagger Petstore

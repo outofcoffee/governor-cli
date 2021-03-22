@@ -11,14 +11,14 @@ import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-internal class ObjectPathRuleTest {
+internal class ObjectValueRuleTest {
     private lateinit var currentSpec: OpenAPI
-    private lateinit var rule: ObjectPathRule
+    private lateinit var rule: ObjectValueRule
     private lateinit var currentSpecJsonPath: DocumentContext
 
     @BeforeEach
     internal fun setUp() {
-        rule = ObjectPathRule()
+        rule = ObjectValueRule()
 
         val currentSpecFile = TestUtil.findClasspathFile("/petstore_v2.yaml")
         currentSpec = SpecificationParser.defaultInstance.loadFromFile(currentSpecFile.toString())
@@ -30,7 +30,7 @@ internal class ObjectPathRuleTest {
     fun `should pass on finding existing object at path`() {
         val context = EvaluationContext(
             currentSpec = currentSpec,
-            ruleConfig = ObjectPathRule.ObjectRuleConfig(path = "$.info"),
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(at = "$.info"),
             currentSpecJsonPath = currentSpecJsonPath
         )
         val result = rule.test(context)
@@ -43,7 +43,7 @@ internal class ObjectPathRuleTest {
     fun `should fail on nonexistent object at path`() {
         val context = EvaluationContext(
             currentSpec = currentSpec,
-            ruleConfig = ObjectPathRule.ObjectRuleConfig(path = "$.doesnotexist"),
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(at = "$.doesnotexist"),
             currentSpecJsonPath = currentSpecJsonPath
         )
         val result = rule.test(context)
@@ -56,9 +56,9 @@ internal class ObjectPathRuleTest {
     fun `should pass on finding non-blank value at path`() {
         val context = EvaluationContext(
             currentSpec = currentSpec,
-            ruleConfig = ObjectPathRule.ObjectRuleConfig(
-                path = "$.info.title",
-                operator = ObjectPathRule.ObjectRuleConfig.ObjectRuleOperator.NotBlank
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(
+                at = "$.info.title",
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.NotBlank
             ),
             currentSpecJsonPath = currentSpecJsonPath
         )
@@ -72,9 +72,9 @@ internal class ObjectPathRuleTest {
     fun `should fail on non-blank value at path`() {
         val context = EvaluationContext(
             currentSpec = currentSpec,
-            ruleConfig = ObjectPathRule.ObjectRuleConfig(
-                path = "$.info.title",
-                operator = ObjectPathRule.ObjectRuleConfig.ObjectRuleOperator.Blank
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(
+                at = "$.info.title",
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.Blank
             ),
             currentSpecJsonPath = currentSpecJsonPath
         )
@@ -88,9 +88,9 @@ internal class ObjectPathRuleTest {
     fun `should pass on matching value at path`() {
         val context = EvaluationContext(
             currentSpec = currentSpec,
-            ruleConfig = ObjectPathRule.ObjectRuleConfig(
-                path = "$.info.title",
-                operator = ObjectPathRule.ObjectRuleConfig.ObjectRuleOperator.EqualTo,
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(
+                at = "$.info.title",
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.EqualTo,
                 value = "Swagger Petstore"
             ),
             currentSpecJsonPath = currentSpecJsonPath
@@ -105,9 +105,9 @@ internal class ObjectPathRuleTest {
     fun `should fail on matching unwanted value at path`() {
         val context = EvaluationContext(
             currentSpec = currentSpec,
-            ruleConfig = ObjectPathRule.ObjectRuleConfig(
-                path = "$.info.version",
-                operator = ObjectPathRule.ObjectRuleConfig.ObjectRuleOperator.NotEqualTo,
+            ruleConfig = ObjectValueRule.ObjectRuleConfig(
+                at = "$.info.version",
+                operator = ObjectValueRule.ObjectRuleConfig.ObjectRuleOperator.NotEqualTo,
                 value = "1.0.0"
             ),
             currentSpecJsonPath = currentSpecJsonPath

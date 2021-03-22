@@ -1,23 +1,23 @@
 package io.gatehill.governor.filters
 
 import io.gatehill.governor.SpecificationParser
-import io.gatehill.governor.filter.IgnoreObjectPathFilter
+import io.gatehill.governor.filter.IgnoreObjectValueFilter
 import io.gatehill.governor.model.eval.EvaluationContext
-import io.gatehill.governor.model.eval.SinglePathResult
+import io.gatehill.governor.model.eval.SingleValueResult
 import io.gatehill.governor.support.TestUtil
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-internal class IgnoreObjectPathFilterTest {
+internal class IgnoreObjectValueFilterTest {
     private lateinit var previousSpec: OpenAPI
     private lateinit var currentSpec: OpenAPI
-    private lateinit var filter: IgnoreObjectPathFilter
+    private lateinit var filter: IgnoreObjectValueFilter
 
     @BeforeEach
     internal fun setUp() {
-        filter = IgnoreObjectPathFilter()
+        filter = IgnoreObjectValueFilter()
 
         val previousSpecFile = TestUtil.findClasspathFile("/petstore_v1.yaml")
         previousSpec = SpecificationParser.defaultInstance.loadFromFile(previousSpecFile.toString())
@@ -31,7 +31,7 @@ internal class IgnoreObjectPathFilterTest {
         val context = EvaluationContext(
             currentSpec = currentSpec
         )
-        val invalidResult = SinglePathResult(false, null, "")
+        val invalidResult = SingleValueResult(false, null, "")
 
         val include = filter.include(context, invalidResult, null)
         assertTrue(include, "Should return true when result is unsupported")
@@ -43,8 +43,8 @@ internal class IgnoreObjectPathFilterTest {
             currentSpec = currentSpec,
             previousSpec = previousSpec,
         )
-        val result = SinglePathResult(false, "test result", "\$.info.license.name")
-        val config = IgnoreObjectPathFilter.ObjectPathFilterConfig("\$.info.license.name")
+        val result = SingleValueResult(false, "test result", "\$.info.license.name")
+        val config = IgnoreObjectValueFilter.ObjectPathFilterConfig("\$.info.license.name")
 
         val include = filter.include(context, result, config)
         assertFalse(include, "Filter should ignore result")
@@ -56,8 +56,8 @@ internal class IgnoreObjectPathFilterTest {
             currentSpec = currentSpec,
             previousSpec = previousSpec,
         )
-        val result = SinglePathResult(false, "test result", "\$.info.license.name")
-        val config = IgnoreObjectPathFilter.ObjectPathFilterConfig("\$.info.title")
+        val result = SingleValueResult(false, "test result", "\$.info.license.name")
+        val config = IgnoreObjectValueFilter.ObjectPathFilterConfig("\$.info.title")
 
         val include = filter.include(context, result, config)
         assertTrue(include, "Filter should include result")

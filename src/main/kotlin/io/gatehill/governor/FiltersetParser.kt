@@ -1,7 +1,7 @@
 package io.gatehill.governor
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.gatehill.governor.filter.IgnoreObjectPathFilter
+import io.gatehill.governor.filter.IgnoreObjectValueFilter
 import io.gatehill.governor.filter.IgnoreParameterFilter
 import io.gatehill.governor.filter.IgnorePropertyFilter
 import io.gatehill.governor.model.config.FiltersetDef
@@ -13,7 +13,7 @@ import java.nio.file.Paths
 
 class FiltersetParser {
     private val registeredFilters = listOf<Filter>(
-        IgnoreObjectPathFilter(),
+        IgnoreObjectValueFilter(),
         IgnoreParameterFilter(),
         IgnorePropertyFilter()
     )

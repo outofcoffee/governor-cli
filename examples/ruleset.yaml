@@ -6,12 +6,12 @@ rules:
   - required-properties-added
 
   # ensure the title matches the expected value
-  - value-at-path:
-      path: $.info.title
+  - check-value:
+      at: $.info.title
       operator: EqualTo
       value: Swagger Petstore
 
   # ensure the location is not blank
-  - value-at-path:
-      path: $.info.location
+  - check-value:
+      at: $.info.location
       operator: Exists

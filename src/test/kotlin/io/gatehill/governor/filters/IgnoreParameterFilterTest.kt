@@ -5,7 +5,7 @@ import io.gatehill.governor.filter.IgnoreParameterFilter
 import io.gatehill.governor.model.ParameterIdentifier
 import io.gatehill.governor.model.eval.EvaluationContext
 import io.gatehill.governor.model.eval.ParameterResult
-import io.gatehill.governor.model.eval.SinglePathResult
+import io.gatehill.governor.model.eval.SingleValueResult
 import io.gatehill.governor.support.TestUtil
 import io.swagger.v3.oas.models.OpenAPI
 import org.junit.jupiter.api.Assertions.*
@@ -33,7 +33,7 @@ internal class IgnoreParameterFilterTest {
         val context = EvaluationContext(
             currentSpec = currentSpec
         )
-        val invalidResult = SinglePathResult(false, null, "")
+        val invalidResult = SingleValueResult(false, null, "")
 
         val include = filter.include(context, invalidResult, null)
         assertTrue(include, "Should return true when result is unsupported")

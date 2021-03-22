@@ -1,7 +1,7 @@
 package io.gatehill.governor.model.eval
 
-data class SinglePathResult(
+data class SingleValueResult(
     override val success: Boolean,
     override val message: String? = null,
-    val path: String
+    val at: String
 ) : EvaluationResult

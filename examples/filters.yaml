@@ -1,7 +1,7 @@
 filters:
   # ignore the license name
-  - ignore-object-path:
-      path: $.info.license.name
+  - ignore-value:
+      at: $.info.license.name
 
   # ignore changes to the pets request size parameter
   - ignore-parameter:

@@ -1,6 +1,6 @@
 package io.gatehill.governor
 
-import io.gatehill.governor.rules.ObjectPathRule
+import io.gatehill.governor.rules.ObjectValueRule
 import io.gatehill.governor.rules.RequiredParametersAddedRule
 import io.gatehill.governor.support.TestUtil
 import org.assertj.core.api.Assertions.assertThat
@@ -27,7 +27,7 @@ class RulesetParserTest {
         assertThat(ruleset.rules[0].rule.javaClass).isEqualTo(RequiredParametersAddedRule::class.java)
         assertNull(ruleset.rules[0].config?.javaClass, "First rule should have empty config")
 
-        assertThat(ruleset.rules[1].rule.javaClass).isEqualTo(ObjectPathRule::class.java)
-        assertThat(ruleset.rules[1].config?.javaClass).isEqualTo(ObjectPathRule.ObjectRuleConfig::class.java)
+        assertThat(ruleset.rules[1].rule.javaClass).isEqualTo(ObjectValueRule::class.java)
+        assertThat(ruleset.rules[1].config?.javaClass).isEqualTo(ObjectValueRule.ObjectRuleConfig::class.java)
     }
 }

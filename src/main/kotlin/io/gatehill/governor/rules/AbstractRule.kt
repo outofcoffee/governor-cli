@@ -1,12 +1,12 @@
-package io.gatehill.governor.model.rules
+package io.gatehill.governor.rules
 
-import io.gatehill.governor.model.Rule
-import io.gatehill.governor.model.RuleInfo
+import io.gatehill.governor.model.rules.Rule
+import io.gatehill.governor.model.config.ConfigMetadata
 import kotlin.reflect.full.findAnnotation
 
 abstract class AbstractRule : Rule {
-    override val info: RuleInfo by lazy {
-        this::class.findAnnotation<RuleInfo>()
+    override val info: ConfigMetadata by lazy {
+        this::class.findAnnotation()
             ?: throw IllegalStateException("Missing rule info for: ${this::class.qualifiedName}")
     }
 

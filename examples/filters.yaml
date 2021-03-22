@@ -1,0 +1,16 @@
+filters:
+  # ignore the license name
+  - ignore-object-path:
+      path: $.info.license.name
+
+  # ignore changes to the pets request size parameter
+  - ignore-parameter:
+      path: /pets
+      operation: GET
+      parameter: size
+
+  # ignore changes to the pets response colour property
+  - ignore-property:
+      path: /pets
+      contentType: application/json
+      property: colour

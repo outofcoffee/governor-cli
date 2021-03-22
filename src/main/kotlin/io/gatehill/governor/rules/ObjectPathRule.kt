@@ -1,12 +1,12 @@
 package io.gatehill.governor.rules
 
 import com.jayway.jsonpath.PathNotFoundException
-import io.gatehill.governor.model.RuleInfo
+import io.gatehill.governor.model.config.ConfigMetadata
 import io.gatehill.governor.model.eval.EvaluationContext
 import io.gatehill.governor.model.eval.EvaluationResult
-import io.gatehill.governor.model.rules.AbstractRule
+import io.gatehill.governor.model.eval.SinglePathResult
 
-@RuleInfo("value-at-path")
+@ConfigMetadata("value-at-path")
 class ObjectPathRule : AbstractRule() {
     override val configClass: Class<*> = ObjectRuleConfig::class.java
 
@@ -32,16 +32,18 @@ class ObjectPathRule : AbstractRule() {
     /**
      * Check if a block/object exists.
      */
-    private fun checkExists(config: ObjectRuleConfig, pathValue: Any?, invert: Boolean = false): EvaluationResult {
+    private fun checkExists(config: ObjectRuleConfig, pathValue: Any?, invert: Boolean = false): SinglePathResult {
         return if (!invert && null != pathValue) {
-            EvaluationResult(
+            SinglePathResult(
                 true,
-                "value at: ${config.path} ${if (invert) "does not exist" else "exists"}"
+                "value at: ${config.path} ${if (invert) "does not exist" else "exists"}",
+                config.path
             )
         } else {
-            EvaluationResult(
+            SinglePathResult(
                 false,
-                "mismatched value at: ${config.path} - expected ${if (invert) "does not exist" else "exists"}, actual: $pathValue"
+                "mismatched value at: ${config.path} - expected ${if (invert) "does not exist" else "exists"}, actual: $pathValue",
+                config.path
             )
         }
     }
@@ -49,16 +51,18 @@ class ObjectPathRule : AbstractRule() {
     /**
      * Check if a string is not blank.
      */
-    private fun checkNotBlank(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): EvaluationResult {
+    private fun checkNotBlank(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): SinglePathResult {
         return if (!invert && pathValue?.isNotBlank() == true) {
-            EvaluationResult(
+            SinglePathResult(
                 true,
-                "value at: ${config.path} is ${if (invert) "blank" else "not blank"}"
+                "value at: ${config.path} is ${if (invert) "blank" else "not blank"}",
+                config.path
             )
         } else {
-            EvaluationResult(
+            SinglePathResult(
                 false,
-                "mismatched value at: ${config.path} - expected ${if (invert) "blank" else "not blank"}, actual: $pathValue"
+                "mismatched value at: ${config.path} - expected ${if (invert) "blank" else "not blank"}, actual: $pathValue",
+                config.path
             )
         }
     }
@@ -66,16 +70,18 @@ class ObjectPathRule : AbstractRule() {
     /**
      * Check if a string equals the specified value.
      */
-    private fun checkEquals(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): EvaluationResult {
+    private fun checkEquals(config: ObjectRuleConfig, pathValue: String?, invert: Boolean = false): SinglePathResult {
         return if (!invert && pathValue?.equals(config.value) == true) {
-            EvaluationResult(
+            SinglePathResult(
                 true,
-                "value at: ${config.path} ${if (invert) "!=" else "=="} $pathValue"
+                "value at: ${config.path} ${if (invert) "!=" else "=="} $pathValue",
+                config.path
             )
         } else {
-            EvaluationResult(
+            SinglePathResult(
                 false,
-                "mismatched value at: ${config.path} - expected ${if (invert) "!=" else "=="} ${config.value}, actual: $pathValue"
+                "mismatched value at: ${config.path} - expected ${if (invert) "!=" else "=="} ${config.value}, actual: $pathValue",
+                config.path
             )
         }
     }

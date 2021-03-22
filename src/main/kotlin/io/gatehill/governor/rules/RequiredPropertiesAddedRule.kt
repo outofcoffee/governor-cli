@@ -1,22 +1,23 @@
 package io.gatehill.governor.rules
 
-import io.gatehill.governor.model.RuleInfo
+import io.gatehill.governor.model.config.ConfigMetadata
+import io.gatehill.governor.model.PropertyIdentifier
+import io.gatehill.governor.model.eval.CompositeResult
 import io.gatehill.governor.model.eval.EvaluationContext
 import io.gatehill.governor.model.eval.EvaluationResult
-import io.gatehill.governor.model.rules.AbstractRule
+import io.gatehill.governor.model.eval.PropertyResult
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.RequestBody
-import java.lang.UnsupportedOperationException
 
-@RuleInfo("required-properties-added")
+@ConfigMetadata("required-properties-added")
 class RequiredPropertiesAddedRule : AbstractRule() {
     override fun test(context: EvaluationContext): EvaluationResult {
         context.previousSpec ?: throw IllegalStateException("No previous OpenAPI specification provided for evaluation")
         val previousSpecPaths = context.previousSpec.paths
 
-        val newlyRequired = mutableListOf<String>()
+        val newlyRequired = mutableListOf<PropertyResult>()
 
         context.currentSpec.paths.forEach { path ->
             previousSpecPaths[path.key]?.let { previousSpecPath ->
@@ -37,7 +38,10 @@ class RequiredPropertiesAddedRule : AbstractRule() {
             }
         }
 
-        return EvaluationResult(newlyRequired.isEmpty(), newlyRequired.joinToString())
+        return CompositeResult(
+            success = newlyRequired.isEmpty(),
+            results = newlyRequired
+        )
     }
 
     /**
@@ -64,7 +68,7 @@ class RequiredPropertiesAddedRule : AbstractRule() {
         path: String,
         requestBody: RequestBody?,
         reason: String
-    ): List<String> {
+    ): List<PropertyResult> {
         return requestBody?.content?.flatMap { (contentType, content) ->
             describeRequiredPropsForSchema(
                 path,
@@ -96,7 +100,7 @@ class RequiredPropertiesAddedRule : AbstractRule() {
         contentType: String,
         schema: Schema<Any>,
         reason: String
-    ): List<String> {
+    ): List<PropertyResult> {
         // TODO don't exclude schemas that are not required, as they may have children that are
         return schema.properties
             .filter { schema.required.contains(it.key) }
@@ -131,7 +135,7 @@ class RequiredPropertiesAddedRule : AbstractRule() {
         propName: String,
         prop: Schema<Any>,
         reason: String
-    ): List<String> {
+    ): List<PropertyResult> {
         return when (prop.type) {
             // recurse
             "object" -> describeRequiredPropsForSchema(path, contentType, prop, reason)
@@ -144,16 +148,23 @@ class RequiredPropertiesAddedRule : AbstractRule() {
         }
     }
 
-    private fun describeScalarProp(path: String, contentType: String, propName: String, reason: String): String {
-        return "Required property '${propName}' in $path request ($contentType): $reason"
-    }
+    private fun describeScalarProp(
+        path: String,
+        contentType: String,
+        propName: String,
+        reason: String
+    ) = PropertyResult(
+        success = false,
+        "Required property '${propName}' in $path request ($contentType): $reason",
+        property = PropertyIdentifier(path, contentType, propName)
+    )
 
     private fun checkPathOperations(
         path: String,
         currentSpecOp: Pair<PathItem.HttpMethod, Operation>,
         previousSpecPath: PathItem
-    ): MutableList<String> {
-        val newlyRequired = mutableListOf<String>()
+    ): List<PropertyResult> {
+        val newlyRequired = mutableListOf<PropertyResult>()
 
         previousSpecPath.readOperationsMap()[currentSpecOp.first]?.let { previousSpecOp ->
             // operation exists in both spec versions
@@ -175,8 +186,8 @@ class RequiredPropertiesAddedRule : AbstractRule() {
         path: String,
         currentSpecOp: Pair<PathItem.HttpMethod, Operation>,
         previousSpecOp: Operation
-    ): List<String> {
-        val newlyRequired = mutableListOf<String>()
+    ): List<PropertyResult> {
+        val newlyRequired = mutableListOf<PropertyResult>()
 
         // TODO check if request body 'required' property was changed
         currentSpecOp.second.requestBody?.content?.forEach { (contentType, content) ->

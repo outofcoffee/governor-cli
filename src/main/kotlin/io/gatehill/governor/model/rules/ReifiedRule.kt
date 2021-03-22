@@ -1,4 +1,4 @@
-package io.gatehill.governor.model
+package io.gatehill.governor.model.rules
 
 data class ReifiedRule(
     val rule: Rule,

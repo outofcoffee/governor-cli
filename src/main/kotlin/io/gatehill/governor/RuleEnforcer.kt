@@ -2,10 +2,12 @@ package io.gatehill.governor
 
 import com.jayway.jsonpath.DocumentContext
 import com.jayway.jsonpath.JsonPath
-import io.gatehill.governor.model.Rule
-import io.gatehill.governor.model.Ruleset
+import io.gatehill.governor.model.eval.CompositeResult
 import io.gatehill.governor.model.eval.EvaluationContext
 import io.gatehill.governor.model.eval.EvaluationResult
+import io.gatehill.governor.model.filter.Filterset
+import io.gatehill.governor.model.rules.Rule
+import io.gatehill.governor.model.rules.Ruleset
 import io.gatehill.governor.util.SerialisationUtil
 import io.swagger.v3.oas.models.OpenAPI
 import org.apache.logging.log4j.LogManager
@@ -13,18 +15,27 @@ import org.apache.logging.log4j.LogManager
 class RuleEnforcer {
     private val logger = LogManager.getLogger(RuleEnforcer::class.java)
 
-    fun enforce(currentSpec: OpenAPI, previousSpec: OpenAPI? = null, ruleset: Ruleset): Boolean {
+    fun enforce(currentSpec: OpenAPI, previousSpec: OpenAPI? = null, ruleset: Ruleset, filterset: Filterset?): Boolean {
         // cache JSONPath context for better performance across rules
         val currentSpecJsonPath: DocumentContext by lazy {
             JsonPath.parse(SerialisationUtil.jsonMapper.writeValueAsString(currentSpec))
         }
 
-        val results = ruleset.rules.map {
-            val context = EvaluationContext(currentSpec, previousSpec, it.config, currentSpecJsonPath)
-            EvaluatedRule(
-                rule = it.rule,
-                result = it.rule.test(context)
-            )
+        val rawResults = ruleset.rules.flatMap { reifiedRule ->
+            val context = EvaluationContext(currentSpec, previousSpec, reifiedRule.config, currentSpecJsonPath)
+            val ruleResult = reifiedRule.rule.test(context)
+
+            flattenResults(ruleResult).map { result -> EvaluatedRule(context, reifiedRule.rule, result) }
+        }
+
+        val results = rawResults.filter { shouldIncludeResult(filterset, it) }
+
+        val skipped = rawResults - results
+        if (skipped.isEmpty()) {
+            logger.debug("No results skipped")
+        } else {
+            val skippedResults = skipped.joinToString("\n"){ "⚪   ${it.rule.info.name}: ${it.result.message ?: ""}" }
+            logger.debug("Skipped results (${skipped.size}):\n$skippedResults")
         }
 
         val passedRules = results.filter { it.result.success }
@@ -43,11 +54,22 @@ class RuleEnforcer {
         }
     }
 
+    private fun flattenResults(ruleResult: EvaluationResult): List<EvaluationResult> =
+        if (ruleResult is CompositeResult) {
+            ruleResult.results.flatMap { flattenResults(it) }
+        } else {
+            listOf(ruleResult)
+        }
+
+    private fun shouldIncludeResult(filterset: Filterset?, result: EvaluatedRule): Boolean =
+        (filterset?.filters?.all { it.filter.include(result.context, result.result, it.config) } != false)
+
     companion object {
         val defaultInstance = RuleEnforcer()
     }
 
-    data class EvaluatedRule(
+    private data class EvaluatedRule(
+        val context: EvaluationContext,
         val rule: Rule,
         val result: EvaluationResult
     )

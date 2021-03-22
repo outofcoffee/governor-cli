@@ -4,10 +4,7 @@ import io.gatehill.governor.SpecificationParser
 import io.gatehill.governor.model.eval.EvaluationContext
 import io.gatehill.governor.support.TestUtil
 import io.swagger.v3.oas.models.OpenAPI
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertThrows
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 

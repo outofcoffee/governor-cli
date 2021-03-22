@@ -1,9 +1,9 @@
 package io.gatehill.governor
 
 import com.fasterxml.jackson.module.kotlin.readValue
-import io.gatehill.governor.model.ReifiedRule
-import io.gatehill.governor.model.Rule
-import io.gatehill.governor.model.Ruleset
+import io.gatehill.governor.model.rules.ReifiedRule
+import io.gatehill.governor.model.rules.Rule
+import io.gatehill.governor.model.rules.Ruleset
 import io.gatehill.governor.model.config.RulesetDef
 import io.gatehill.governor.rules.ObjectPathRule
 import io.gatehill.governor.rules.RequiredParametersAddedRule
@@ -20,6 +20,7 @@ class RulesetParser {
 
     private val rules = registeredRules.map { rule -> return@map rule.info.name to rule }.toMap()
 
+    @Suppress("UNCHECKED_CAST")
     fun loadFromFile(rulesFilePath: String): Ruleset {
         val rulesFile = Paths.get(rulesFilePath).toFile()
         if (!rulesFile.exists()) {
@@ -47,7 +48,7 @@ class RulesetParser {
     }
 
     private fun lookupRule(ruleName: String) =
-        rules.get(ruleName) ?: throw IllegalStateException("No matching rule with name: $ruleName")
+        rules[ruleName] ?: throw IllegalStateException("No matching rule with name: $ruleName")
 
     companion object {
         val defaultInstance = RulesetParser()

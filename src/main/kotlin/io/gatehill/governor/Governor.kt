@@ -7,6 +7,7 @@ import kotlin.system.exitProcess
 
 object Governor {
     private val rulesetParser = RulesetParser.defaultInstance
+    private val filterParser = FiltersetParser.defaultInstance
     private val specificationParser = SpecificationParser.defaultInstance
     private val ruleEnforcer = RuleEnforcer.defaultInstance
 
@@ -28,6 +29,11 @@ object Governor {
             shortName = "r",
             description = "Rules file"
         ).required()
+        val filterFile by parser.option(
+            ArgType.String,
+            shortName = "f",
+            description = "Filters file"
+        )
         val nonZeroExitCodeOnFailure by parser.option(
             ArgType.Boolean,
             shortName = "z",
@@ -37,10 +43,11 @@ object Governor {
         parser.parse(args)
 
         val ruleset = rulesetParser.loadFromFile(rulesFile)
+        val filters = filterFile?.let { filterParser.loadFromFile(it) }
         val currentSpec = specificationParser.loadFromFile(currentSpecFile)
         val previousSpec = previousSpecFile?.let { specificationParser.loadFromFile(it) }
 
-        val outcome = ruleEnforcer.enforce(currentSpec, previousSpec, ruleset)
+        val outcome = ruleEnforcer.enforce(currentSpec, previousSpec, ruleset, filters)
         exitProcess(if (nonZeroExitCodeOnFailure == true && !outcome) 1 else 0)
     }
 }

@@ -28,6 +28,13 @@ paths:
           required: true
           schema:
             type: string
+        # added in v2
+        - name: size
+          in: query
+          description: The size of pet
+          required: true
+          schema:
+            type: string
       responses:
         '200':
           description: A paged array of pets
@@ -104,6 +111,7 @@ components:
         - id
         - name
         - age # added in v2
+        - colour # added in v2
       properties:
         id:
           type: integer
@@ -113,6 +121,8 @@ components:
         age: # added in v2
           type: integer
           format: int64
+        colour: # added in v2
+          type: string
         tag:
           type: string
     Pets:

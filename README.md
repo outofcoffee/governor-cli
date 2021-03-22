@@ -23,7 +23,7 @@ This check works for the following scenarios:
 
 In addition to the `required-parameters-added` rule, you can set a variety of other rules for your OpenAPI specifications. For example, you can require certain fields are populated, present, or absent.
 
-```
+```yaml
 # ruleset.yaml
 rules:
   # check if there are newly required parameters
@@ -98,7 +98,7 @@ In this example, `petstore_v1.yaml` is your OpenAPI specification. The `ruleset.
 
 Here's an example ruleset:
 
-```
+```yaml
 # ruleset.yaml
 rules:
   # ensure the title matches the expected value
@@ -147,6 +147,40 @@ Run Governor as follows - note the use of the `-p` (previous version) flag:
 
 As there is a new mandatory ('required') parameter between v1 and v2 of the specification, the `required-parameters-added` rule will pick this up.
 
+### Filters: skipping rules or results
+
+You can ignore/skip differences using filters. This can be handy if you want to mark certain changes as accepted, or mitigated.
+
+Skipped results are reported at DEBUG log level:
+
+    DEBUG RuleEnforcer - Skipped results (2):
+    ⚪   required-parameters-added: Required parameter 'size' in GET /pets: new in latest version
+    ⚪   required-properties-added: Required property 'colour' in /pets request (application/json): changed to be required in latest version
+
+You can provide filters using a filters file. Here's an example:
+
+```yaml
+# filters.yaml
+filters:
+  # ignore the license name
+  - ignore-object-path:
+      path: $.info.license.name
+
+  # ignore changes to the pets request size parameter
+  - ignore-parameter:
+      path: /pets
+      operation: GET
+      parameter: size
+
+  # ignore changes to the pets response colour property
+  - ignore-property:
+      path: /pets
+      contentType: application/json
+      property: colour
+```
+
+Filters always take precedence over rules. For example, if we had a rule checking the path `$.info.license.name`, the filter configuration above would cause it to be skipped.
+
 ### Usage
 
 ```
@@ -155,6 +189,7 @@ Options:
     --currentSpecFile, -s -> OpenAPI specification file (always required) { String }
     --previousSpecFile, -p -> Previous OpenAPI specification file { String }
     --rulesFile, -r -> Rules file (always required) { String }
+    --filterFile, -f -> Filters file { String }
     --nonZeroExitCodeOnFailure, -z -> Return a non-zero exit code if rule evaluation fails
     --help, -h -> Usage info
 ```

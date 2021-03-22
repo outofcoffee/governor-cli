@@ -1,20 +1,19 @@
 package io.gatehill.governor.rules
 
-import io.gatehill.governor.model.RuleInfo
-import io.gatehill.governor.model.eval.EvaluationContext
-import io.gatehill.governor.model.eval.EvaluationResult
-import io.gatehill.governor.model.rules.AbstractRule
+import io.gatehill.governor.model.config.ConfigMetadata
+import io.gatehill.governor.model.ParameterIdentifier
+import io.gatehill.governor.model.eval.*
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
 import io.swagger.v3.oas.models.parameters.Parameter
 
-@RuleInfo("required-parameters-added")
+@ConfigMetadata("required-parameters-added")
 class RequiredParametersAddedRule : AbstractRule() {
     override fun test(context: EvaluationContext): EvaluationResult {
         context.previousSpec ?: throw IllegalStateException("No previous OpenAPI specification provided for evaluation")
         val previousSpecPaths = context.previousSpec.paths
 
-        val newlyRequired = mutableListOf<String>()
+        val newlyRequired = mutableListOf<ParameterResult>()
 
         context.currentSpec.paths.forEach { path ->
             previousSpecPaths[path.key]?.let { previousSpecPath ->
@@ -35,7 +34,10 @@ class RequiredParametersAddedRule : AbstractRule() {
             }
         }
 
-        return EvaluationResult(newlyRequired.isEmpty(), newlyRequired.joinToString())
+        return CompositeResult(
+            success = newlyRequired.isEmpty(),
+            results = newlyRequired
+        )
     }
 
     private fun describeRequiredParams(
@@ -50,14 +52,18 @@ class RequiredParametersAddedRule : AbstractRule() {
         opEntry: Pair<PathItem.HttpMethod, Operation>,
         parameter: Parameter,
         reason: String
-    ) = "Required parameter '${parameter.name}' in ${opEntry.first.name} $path: $reason"
+    ) = ParameterResult(
+        success = false,
+        message = "Required parameter '${parameter.name}' in ${opEntry.first.name} $path: $reason",
+        ParameterIdentifier(path, opEntry.first.name, parameter.name)
+    )
 
     private fun checkPathOperations(
         path: String,
         currentSpecOp: Pair<PathItem.HttpMethod, Operation>,
         previousSpecPath: PathItem
-    ): MutableList<String> {
-        val newlyRequired = mutableListOf<String>()
+    ): List<ParameterResult> {
+        val newlyRequired = mutableListOf<ParameterResult>()
 
         previousSpecPath.readOperationsMap()[currentSpecOp.first]?.let { previousSpecOp ->
             // operation exists in both spec versions
@@ -79,8 +85,8 @@ class RequiredParametersAddedRule : AbstractRule() {
         path: String,
         currentSpecOp: Pair<PathItem.HttpMethod, Operation>,
         previousSpecOp: Operation
-    ): List<String> {
-        val newlyRequired = mutableListOf<String>()
+    ): List<ParameterResult> {
+        val newlyRequired = mutableListOf<ParameterResult>()
 
         currentSpecOp.second.parameters?.filter { it.required }?.forEach { parameter ->
             previousSpecOp.parameters?.find { it.name == parameter.name }?.let { previousSpecParam ->

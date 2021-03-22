@@ -1,7 +1,7 @@
 OpenAPI Governor
 ================
 
-Enforce rules against OpenAPI (fka Swagger) specifications.
+Enforce rules against OpenAPI specifications.
 
 ## Example
 
@@ -89,7 +89,7 @@ Governor images are pushed to [Docker Hub](https://hub.docker.com/r/outofcoffee/
 Let's start with the following file structure:
 
 ```
-specs/
+examples/
  ∟ petstore_v1.yaml
  ∟ ruleset.yaml
 ```
@@ -115,10 +115,11 @@ rules:
 
 Run Governor as follows:
 
-    docker run --rm -it -v $PWD/specs:/app/specs outofcoffee/governor \
-                -s ./specs/petstore_v1.yaml -r ./specs/ruleset.yaml
+    docker run --rm -it -v $PWD/examples:/app/examples outofcoffee/governor \
+                -s ./examples/petstore_v1.yaml \
+                -r ./examples/ruleset.yaml
 
-> Note that this uses the bind-mount mechanism in Docker. Therefore the `./specs` prefix for the files, refers to the path `/app/specs` within the container filesystem.
+> Note that this uses the bind-mount mechanism in Docker. Therefore the `./examples` prefix for the files, refers to the path `/app/examples` within the container filesystem.
 
 ## Comparing between versions
 
@@ -127,7 +128,7 @@ Some rules allow you to check for differences between specification versions. Fo
 Let's add a second version of our OpenAPI specification, `petstore_v2.yaml`. For the purposes of this example, let's add a new, required, parameter to v2 of the specification. This results in the following file structure:
 
 ```
-specs/
+examples/
  ∟ petstore_v1.yaml
  ∟ petstore_v2.yaml
  ∟ ruleset.yaml
@@ -142,8 +143,9 @@ Now add the following rule to our ruleset file:
 
 Run Governor as follows - note the use of the `-p` (previous version) flag:
 
-    docker run --rm -it -v $PWD/specs:/app/specs outofcoffee/governor \
-                -s ./specs/petstore_v2.yaml -p ./specs/petstore_v1.yaml -r ./specs/ruleset.yaml
+    docker run --rm -it -v $PWD/examples:/app/examples outofcoffee/governor \
+                -s ./examples/petstore_v2.yaml -p ./examples/petstore_v1.yaml \
+                -r ./examples/ruleset.yaml
 
 As there is a new mandatory ('required') parameter between v1 and v2 of the specification, the `required-parameters-added` rule will pick this up.
 
@@ -181,9 +183,10 @@ filters:
 
 Run Governor as follows - note the use of the `-f` (filters file) flag:
 
-    docker run --rm -it -v $PWD/specs:/app/specs outofcoffee/governor \
-                -s ./specs/petstore_v2.yaml -p ./specs/petstore_v1.yaml -r ./specs/ruleset.yaml \
-                -f ./specs/filters.yaml
+    docker run --rm -it -v $PWD/examples:/app/examples outofcoffee/governor \
+                -s ./examples/petstore_v2.yaml -p ./examples/petstore_v1.yaml \
+                -r ./examples/ruleset.yaml \
+                -f ./examples/filters.yaml
 
 Filters always take precedence over rules. For example, if we had a rule checking the value `$.info.license.name`, the filter configuration above would cause it to be skipped.
 
@@ -196,13 +199,13 @@ Options:
     --previousSpecFile, -p -> Previous OpenAPI specification file { String }
     --rulesFile, -r -> Rules file (always required) { String }
     --filterFile, -f -> Filters file { String }
-    --nonZeroExitCodeOnFailure, -z -> Return a non-zero exit code if rule evaluation fails
+    --verboseExitCode, -x -> Return a non-zero exit code if rule evaluation fails
     --help, -h -> Usage info
 ```
 
 ### Exit code
 
-When Governor runs, it produces output indicating which rules pass and fail. By default, it will exit with status 0. If you'd like the exit code to reflect whether all rules were evaluated successfully, pass the `-z` flag. In this case, if all rules pass, the exit code will be 0, otherwise it will be 1.
+When Governor runs, it produces output indicating which rules pass and fail. By default, it will exit with status 0. If you'd like the exit code to reflect whether all rules were evaluated successfully, pass the `-x` flag. In this case, if all rules pass, the exit code will be 0, otherwise it will be 1.
 
 This can be useful when scripting your CI/CD pipeline to cause a build or deployment to fail if rules are not satisfied.
 
@@ -221,7 +224,9 @@ Build:
 Test:
 
     docker run --rm -it -v $PWD/examples:/app/examples outofcoffee/governor:latest \
-            -s ./examples/petstore_v2.yaml -p ./examples/petstore_v1.yaml -r ./examples/ruleset.yaml
+            -s ./examples/petstore_v2.yaml -p ./examples/petstore_v1.yaml \
+            -r ./examples/ruleset.yaml \
+            -f ./examples/filters.yaml
 
 ### Without Docker
 
@@ -233,4 +238,7 @@ Build:
 
 Test:
 
-    ./build/install/openapi-governor/bin/openapi-governor -s ./examples/petstore_v2.yaml -p ./examples/petstore_v1.yaml -r ./examples/ruleset.yaml
+    ./build/install/openapi-governor/bin/openapi-governor \
+            -s ./examples/petstore_v2.yaml -p ./examples/petstore_v1.yaml \
+            -r ./examples/ruleset.yaml \
+            -f ./examples/filters.yaml

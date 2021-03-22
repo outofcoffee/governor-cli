@@ -34,9 +34,9 @@ object Governor {
             shortName = "f",
             description = "Filters file"
         )
-        val nonZeroExitCodeOnFailure by parser.option(
+        val verboseExitCode by parser.option(
             ArgType.Boolean,
-            shortName = "z",
+            shortName = "x",
             description = "Return a non-zero exit code if rule evaluation fails",
         )
 
@@ -48,6 +48,6 @@ object Governor {
         val previousSpec = previousSpecFile?.let { specificationParser.loadFromFile(it) }
 
         val outcome = ruleEnforcer.enforce(currentSpec, previousSpec, ruleset, filters)
-        exitProcess(if (nonZeroExitCodeOnFailure == true && !outcome) 1 else 0)
+        exitProcess(if (verboseExitCode == true && !outcome) 1 else 0)
     }
 }

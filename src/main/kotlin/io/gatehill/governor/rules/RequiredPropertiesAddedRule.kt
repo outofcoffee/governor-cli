@@ -210,7 +210,7 @@ class RequiredPropertiesAddedRule : AbstractRule() {
      * prop:
      *   type: array
      *   items:
-     *   - type: object
+     *     type: object
      *     required:
      *       - id
      *     properties:
@@ -307,7 +307,13 @@ class RequiredPropertiesAddedRule : AbstractRule() {
 
         } else {
             // compare object schema required properties
-            newlyRequired += compareObjectSchemas(path, method, contentType, currentContent, previousContent)
+            newlyRequired += compareObjectSchemas(
+                path,
+                method,
+                contentType,
+                currentContent.schema,
+                previousContent.schema
+            )
         }
 
         return newlyRequired
@@ -317,17 +323,17 @@ class RequiredPropertiesAddedRule : AbstractRule() {
         path: String,
         method: PathItem.HttpMethod,
         contentType: String,
-        currentContent: MediaType,
-        previousContent: MediaType
+        currentSchema: Schema<*>,
+        previousSchema: Schema<*>
     ): List<PropertyResult> {
         val newlyRequired = mutableListOf<PropertyResult>()
 
-        val latestRequiredProps = currentContent.schema?.properties?.filter {
-            currentContent.schema.required?.contains(it.key) == true
+        val latestRequiredProps = currentSchema.properties?.filter {
+            currentSchema.required?.contains(it.key) == true
         }
 
         latestRequiredProps?.forEach { (propName, prop) ->
-            if (!previousContent.schema.required.contains(propName)) {
+            if (!previousSchema.required.contains(propName)) {
                 newlyRequired += describeSchema(
                     path = path,
                     method = method,
@@ -349,16 +355,13 @@ class RequiredPropertiesAddedRule : AbstractRule() {
         currentArray: ArraySchema,
         previousArray: ArraySchema
     ): List<PropertyResult> {
-        val newlyRequired = mutableListOf<PropertyResult>()
-
-        val requiredDiff = currentArray.items.required - previousArray.items.required
-
-        newlyRequired += requiredDiff.flatMap {
-            val currentProp :Schema<*> = currentArray.items.properties[it]!!
-            describeSchema(path, method, contentType, it, currentProp, "added as required in latest version")
-        }
-
-        return newlyRequired
+        return compareObjectSchemas(
+            path,
+            method,
+            contentType,
+            currentArray.items,
+            previousArray.items
+        )
     }
 
     private fun describeScalarProp(

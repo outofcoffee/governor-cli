@@ -1,7 +1,7 @@
 package io.gatehill.governor.rules
 
-import io.gatehill.governor.model.rules.Rule
 import io.gatehill.governor.model.config.ConfigMetadata
+import io.gatehill.governor.model.rules.Rule
 import kotlin.reflect.full.findAnnotation
 
 abstract class AbstractRule : Rule {

@@ -42,6 +42,6 @@ internal class RequiredPropertiesAddedRuleTest {
         val result = rule.test(context)
 
         assertFalse(result.success, "Rule should evaluate to failed")
-        assertEquals("Required property 'age' in /pets request (application/json): changed to be required in latest version", result.message)
+        assertEquals("Required property 'age' in POST /pets request (application/json): newly required in latest version", result.message)
     }
 }

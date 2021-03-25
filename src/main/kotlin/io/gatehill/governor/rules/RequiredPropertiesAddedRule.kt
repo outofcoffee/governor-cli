@@ -1,13 +1,16 @@
 package io.gatehill.governor.rules
 
-import io.gatehill.governor.model.config.ConfigMetadata
 import io.gatehill.governor.model.PropertyIdentifier
+import io.gatehill.governor.model.config.ConfigMetadata
 import io.gatehill.governor.model.eval.CompositeResult
 import io.gatehill.governor.model.eval.EvaluationContext
 import io.gatehill.governor.model.eval.EvaluationResult
 import io.gatehill.governor.model.eval.PropertyResult
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
+import io.swagger.v3.oas.models.Paths
+import io.swagger.v3.oas.models.media.ArraySchema
+import io.swagger.v3.oas.models.media.MediaType
 import io.swagger.v3.oas.models.media.Schema
 import io.swagger.v3.oas.models.parameters.RequestBody
 
@@ -20,28 +23,125 @@ class RequiredPropertiesAddedRule : AbstractRule() {
         val newlyRequired = mutableListOf<PropertyResult>()
 
         context.currentSpec.paths.forEach { path ->
-            previousSpecPaths[path.key]?.let { previousSpecPath ->
-                // path exists in both spec versions
-                path.value.readOperationsMap().map { it.toPair() }.forEach { opEntry ->
-                    newlyRequired += checkPathOperations(path.key, opEntry, previousSpecPath)
-                }
-
-            } ?: run {
-                // path is new in latest version
-                path.value.readOperationsMap().map { it.toPair() }.forEach { opEntry ->
-                    newlyRequired += describeRequiredPropsForRequest(
-                        path.key,
-                        opEntry.second.requestBody,
-                        "parent path block is new in latest version"
-                    )
-                }
-            }
+            newlyRequired += comparePath(previousSpecPaths, path.key, path.value)
         }
 
         return CompositeResult(
             success = newlyRequired.isEmpty(),
             results = newlyRequired
         )
+    }
+
+    private fun comparePath(
+        previousSpecPaths: Paths,
+        path: String,
+        pathItem: PathItem
+    ): List<PropertyResult> {
+        val newlyRequired = mutableListOf<PropertyResult>()
+
+        previousSpecPaths[path]?.let { previousSpecPath ->
+            // path exists in both spec versions
+            pathItem.readOperationsMap().forEach { (method, operation) ->
+                newlyRequired += comparePathOperation(path, method, operation, previousSpecPath)
+            }
+
+        } ?: run {
+            // path is new in latest version
+            pathItem.readOperationsMap().forEach { (method, operation) ->
+                newlyRequired += describeRequest(
+                    path,
+                    method,
+                    operation.requestBody,
+                    "parent path block is new in latest version"
+                )
+            }
+        }
+
+        return newlyRequired
+    }
+
+    private fun comparePathOperation(
+        path: String,
+        currentSpecMethod: PathItem.HttpMethod,
+        currentSpecOp: Operation,
+        previousSpecPath: PathItem
+    ): List<PropertyResult> {
+        val newlyRequired = mutableListOf<PropertyResult>()
+
+        previousSpecPath.readOperationsMap()[currentSpecMethod]?.let { previousSpecOp ->
+            // operation exists in both spec versions
+            newlyRequired += compareRequest(
+                path = path,
+                method = currentSpecMethod,
+                currentSpecOp = currentSpecOp,
+                previousSpecOp = previousSpecOp
+            )
+
+            // TODO check for *removals* of required properties in response schema
+
+        } ?: run {
+            // operation is new in latest version
+            newlyRequired += describeRequest(
+                path = path,
+                method = currentSpecMethod,
+                requestBody = currentSpecOp.requestBody,
+                reason = "parent operation block is new in latest version"
+            )
+        }
+
+        return newlyRequired
+    }
+
+    private fun compareRequest(
+        path: String,
+        method: PathItem.HttpMethod,
+        currentSpecOp: Operation,
+        previousSpecOp: Operation
+    ): List<PropertyResult> {
+        val newlyRequired = mutableListOf<PropertyResult>()
+
+        currentSpecOp.requestBody?.content?.forEach { (contentType, content) ->
+            newlyRequired += compareRequestContent(
+                path = path,
+                method = method,
+                currentSpecOp = currentSpecOp,
+                previousSpecOp = previousSpecOp,
+                contentType = contentType,
+                content = content
+            )
+        }
+
+        return newlyRequired
+    }
+
+    private fun compareRequestContent(
+        path: String,
+        method: PathItem.HttpMethod,
+        currentSpecOp: Operation,
+        previousSpecOp: Operation,
+        contentType: String,
+        content: MediaType
+    ): List<PropertyResult> {
+        val newlyRequired = mutableListOf<PropertyResult>()
+
+        // TODO check request body 'required' property (and if it has changed)
+
+        val previousSpecContent = previousSpecOp.requestBody?.content?.get(contentType)
+        if (null != previousSpecContent) {
+            // content for content type exists in both spec versions - check for schema differences
+            newlyRequired += compareRequestSchemas(path, method, contentType, content, previousSpecContent)
+
+        } else {
+            // requestBody is new in latest version (but operation previously existed)
+            newlyRequired += describeRequest(
+                path = path,
+                method = method,
+                requestBody = currentSpecOp.requestBody,
+                reason = "request body is new in latest version"
+            )
+        }
+
+        return newlyRequired
     }
 
     /**
@@ -64,19 +164,85 @@ class RequiredPropertiesAddedRule : AbstractRule() {
      *           type: string
      * ```
      */
-    private fun describeRequiredPropsForRequest(
+    private fun describeRequest(
         path: String,
+        method: PathItem.HttpMethod,
         requestBody: RequestBody?,
         reason: String
     ): List<PropertyResult> {
         return requestBody?.content?.flatMap { (contentType, content) ->
-            describeRequiredPropsForSchema(
-                path,
-                contentType,
-                content.schema,
-                reason
+            describeSchema(
+                path = path,
+                method = method,
+                contentType = contentType,
+                propNameOrDescription = "requestBody",
+                schema = content.schema,
+                reason = reason
             )
         } ?: emptyList()
+    }
+
+    /**
+     * Example structure:
+     *
+     * ```
+     * id:
+     *   type: integer
+     *   format: int64
+     * ```
+     *
+     * or object:
+     *
+     * ```
+     * prop:
+     *   type: object
+     *   required:
+     *     - id
+     *   properties:
+     *     id:
+     *       type: integer
+     *       format: int64
+     * ```
+     *
+     * or array of items:
+     *
+     * ```
+     * prop:
+     *   type: array
+     *   items:
+     *   - type: object
+     *     required:
+     *       - id
+     *     properties:
+     *       id:
+     *         type: integer
+     *         format: int64
+     * ```
+     */
+    private fun describeSchema(
+        path: String,
+        method: PathItem.HttpMethod,
+        contentType: String,
+        propNameOrDescription: String,
+        schema: Schema<*>,
+        reason: String
+    ): List<PropertyResult> {
+        return when (schema.type) {
+            // recurse
+            "object" -> describeSchemaRequiredProps(path, method, contentType, schema, reason)
+
+            // iterate
+            "array" -> {
+                val arraySchema = schema as ArraySchema
+
+                // TODO support mixed type arrays (oneOf/anyOf etc.)
+
+                describeSchemaRequiredProps(path, method, contentType, arraySchema.items, reason)
+            }
+
+            // assume scalar, non-object type, like string, number etc.
+            else -> listOf(describeScalarProp(path, method, contentType, propNameOrDescription, reason))
+        }
     }
 
     /**
@@ -95,121 +261,115 @@ class RequiredPropertiesAddedRule : AbstractRule() {
      *     type: string
      * ```
      */
-    private fun describeRequiredPropsForSchema(
+    private fun describeSchemaRequiredProps(
         path: String,
+        method: PathItem.HttpMethod,
         contentType: String,
-        schema: Schema<Any>,
+        schema: Schema<*>,
         reason: String
     ): List<PropertyResult> {
-        // TODO don't exclude schemas that are not required, as they may have children that are
+        // include properties that are not marked 'required' if they have children (that might be required)
         return schema.properties
-            .filter { schema.required.contains(it.key) }
-            .flatMap { (propName, prop) -> describeProp(path, contentType, propName, prop, reason) }
+            ?.filter { it.value.type == "object" || schema.required.contains(it.key) }
+            ?.flatMap { (propName, prop) -> describeSchema(path, method, contentType, propName, prop, reason) }
+            ?: emptyList()
     }
 
-    /**
-     * Example structure:
-     *
-     * ```
-     * id:
-     *   type: integer
-     *   format: int64
-     * ```
-     *
-     * or:
-     *
-     * ```
-     * prop:
-     *   type: object
-     *   required:
-     *     - id
-     *   properties:
-     *     id:
-     *       type: integer
-     *       format: int64
-     * ```
-     */
-    private fun describeProp(
+    private fun compareRequestSchemas(
         path: String,
+        method: PathItem.HttpMethod,
         contentType: String,
-        propName: String,
-        prop: Schema<Any>,
-        reason: String
-    ): List<PropertyResult> {
-        return when (prop.type) {
-            // recurse
-            "object" -> describeRequiredPropsForSchema(path, contentType, prop, reason)
-
-            // iterate
-            "array" -> TODO("arrays not implemented yet")
-
-            // assume scalar
-            else -> listOf(describeScalarProp(path, contentType, propName, reason))
-        }
-    }
-
-    private fun describeScalarProp(
-        path: String,
-        contentType: String,
-        propName: String,
-        reason: String
-    ) = PropertyResult(
-        success = false,
-        "Required property '${propName}' in $path request ($contentType): $reason",
-        property = PropertyIdentifier(path, contentType, propName)
-    )
-
-    private fun checkPathOperations(
-        path: String,
-        currentSpecOp: Pair<PathItem.HttpMethod, Operation>,
-        previousSpecPath: PathItem
+        currentContent: MediaType,
+        previousContent: MediaType
     ): List<PropertyResult> {
         val newlyRequired = mutableListOf<PropertyResult>()
 
-        previousSpecPath.readOperationsMap()[currentSpecOp.first]?.let { previousSpecOp ->
-            // operation exists in both spec versions
-            newlyRequired += checkForNewRequiredProps(path, currentSpecOp, previousSpecOp)
-
-        } ?: run {
-            // operation is new in latest version
-            newlyRequired += describeRequiredPropsForRequest(
-                path,
-                currentSpecOp.second.requestBody,
-                "parent operation block is new in latest version"
+        // check schema types are the same
+        if (currentContent.schema?.type != previousContent.schema?.type) {
+            // schema type is different - this is a breaking change
+            newlyRequired += PropertyResult(
+                success = false,
+                message = "Request schema type in $path request ($contentType) changed from ${currentContent.schema?.type} to ${previousContent.schema?.type} in latest version",
+                PropertyIdentifier(path, contentType, "requestBody")
             )
+            return newlyRequired
+        }
+
+        if (currentContent.schema?.type == "array") {
+            // compare array schemas to see if items have changed
+            newlyRequired += compareArraySchemas(
+                path,
+                method,
+                contentType,
+                currentContent.schema as ArraySchema,
+                previousContent.schema as ArraySchema
+            )
+
+        } else {
+            // compare object schema required properties
+            newlyRequired += compareObjectSchemas(path, method, contentType, currentContent, previousContent)
         }
 
         return newlyRequired
     }
 
-    private fun checkForNewRequiredProps(
+    private fun compareObjectSchemas(
         path: String,
-        currentSpecOp: Pair<PathItem.HttpMethod, Operation>,
-        previousSpecOp: Operation
+        method: PathItem.HttpMethod,
+        contentType: String,
+        currentContent: MediaType,
+        previousContent: MediaType
     ): List<PropertyResult> {
         val newlyRequired = mutableListOf<PropertyResult>()
 
-        // TODO check if request body 'required' property was changed
-        currentSpecOp.second.requestBody?.content?.forEach { (contentType, content) ->
-            previousSpecOp.requestBody?.content?.get(contentType)?.let { previousSpecContent ->
-                // content for content type exists in both spec versions - check for schema differences
+        val latestRequiredProps = currentContent.schema?.properties?.filter {
+            currentContent.schema.required?.contains(it.key) == true
+        }
 
-                content.schema.properties
-                    .filter { content.schema.required.contains(it.key) }
-                    .forEach { (propName, prop) ->
-                        if (!previousSpecContent.schema.required.contains(propName)) {
-                            newlyRequired += describeProp(
-                                path = path,
-                                contentType = contentType,
-                                propName = propName,
-                                prop = prop,
-                                reason = "changed to be required in latest version"
-                            )
-                        }
-                    }
+        latestRequiredProps?.forEach { (propName, prop) ->
+            if (!previousContent.schema.required.contains(propName)) {
+                newlyRequired += describeSchema(
+                    path = path,
+                    method = method,
+                    contentType = contentType,
+                    propNameOrDescription = propName,
+                    schema = prop,
+                    reason = "newly required in latest version"
+                )
             }
         }
 
         return newlyRequired
     }
+
+    private fun compareArraySchemas(
+        path: String,
+        method: PathItem.HttpMethod,
+        contentType: String,
+        currentArray: ArraySchema,
+        previousArray: ArraySchema
+    ): List<PropertyResult> {
+        val newlyRequired = mutableListOf<PropertyResult>()
+
+        val requiredDiff = currentArray.items.required - previousArray.items.required
+
+        newlyRequired += requiredDiff.flatMap {
+            val currentProp :Schema<*> = currentArray.items.properties[it]!!
+            describeSchema(path, method, contentType, it, currentProp, "added as required in latest version")
+        }
+
+        return newlyRequired
+    }
+
+    private fun describeScalarProp(
+        path: String,
+        method: PathItem.HttpMethod,
+        contentType: String,
+        propName: String,
+        reason: String
+    ) = PropertyResult(
+        success = false,
+        "Required property '${propName}' in $method $path request ($contentType): $reason",
+        property = PropertyIdentifier(path, contentType, propName)
+    )
 }

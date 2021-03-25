@@ -9,7 +9,7 @@ class SpecificationParser {
     fun loadFromFile(specFilePath: String): OpenAPI {
         val specFile = Paths.get(specFilePath).toFile()
         if (!specFile.exists()) {
-            throw IllegalArgumentException("OpenAPI specification file: ${specFilePath} does not exist")
+            throw IllegalArgumentException("OpenAPI specification file: $specFile does not exist")
         }
 
         // resolve references fully to enable property/schema traversal
